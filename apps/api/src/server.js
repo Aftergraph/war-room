@@ -12,12 +12,13 @@ const url = require('url');
 const { EventStore } = require('../../../services/persistence/src/store');
 const { StateProjector } = require('../../../services/projection/src/projector');
 const { IngestionPipeline } = require('../../../services/ingestion/src/pipeline');
-const { UnifiedIntelligenceEngine } = require('../../../services/intelligence/src');
+const { UnifiedIntelligenceEngine, EVIDENCE_TIERS, PLANE_PRIORS } = require('../../../services/intelligence/src');
 const { NodeBridgeDaemon } = require('../../../services/node-bridge/src/daemon');
 const { GitHubAdapter } = require('../../../integrations/github/src/adapter');
 const { TelegramAdapter } = require('../../../integrations/telegram/src/adapter');
 const { IntegrationRegistry } = require('../../../integrations/external/src/registry');
 const { CredentialBroker } = require('../../../security/src/credentialBroker');
+const { OperationalOntologyEngine } = require('../../../packages/ontology/src');
 
 const PORT = process.env.PORT || 3333;
 const ROOT_DIR = path.resolve(__dirname, '../../../');
@@ -75,6 +76,17 @@ const githubAdapter = new GitHubAdapter({ org: 'Aftergraph', seedData });
 const telegramAdapter = new TelegramAdapter();
 const integrationRegistry = new IntegrationRegistry();
 const credentialBroker = new CredentialBroker();
+const ontologyEngine = new OperationalOntologyEngine();
+
+// Non-blocking live org sync on boot to hydrate 31 repositories from GitHub
+githubAdapter.syncLiveOrg().then(syncRes => {
+  if (syncRes && syncRes.repos) {
+    projector.updateRepositories(syncRes.repos);
+    console.log(`[Server] Live Aftergraph Org synced: ${syncRes.totalRepos} repositories, ${syncRes.totalOpenPrs} open PRs`);
+  }
+}).catch(err => {
+  console.warn('[Server] Initial live org sync notice:', err.message);
+});
 
 // Ingest seed events if store is empty
 if (eventStore.getEventCount() === 0 && seedData && Array.isArray(seedData.events)) {
@@ -276,6 +288,78 @@ const server = http.createServer(async (req, res) => {
         timestamp: new Date().toISOString()
       });
     }
+
+    // --- Live Aftergraph Org Sync Query ---
+    if (reqPath === '/api/org/sync') {
+      try {
+        const syncRes = await githubAdapter.syncLiveOrg();
+        if (syncRes && syncRes.repos) {
+          projector.updateRepositories(syncRes.repos);
+          realtimeHub.broadcast('org.synced', {
+            totalRepos: syncRes.totalRepos,
+            totalOpenPrs: syncRes.totalOpenPrs,
+            timestamp: syncRes.lastSync
+          });
+        }
+        return sendJson(res, 200, syncRes);
+      } catch (err) {
+        return sendJson(res, 500, { error: err.message });
+      }
+    }
+
+    // --- Palantir AIP Operational Ontology Endpoints ---
+    if (reqPath === '/api/ontology/decisions') {
+      return sendJson(res, 200, { decisions: ontologyEngine.getDecisions() });
+    }
+
+    if (reqPath === '/api/ontology/reality-diff') {
+      const state = projector.getState();
+      const diffResult = ontologyEngine.computeRealityDiff(githubAdapter.orgStateContract, state.repos);
+      return sendJson(res, 200, { realityDiff: diffResult });
+    }
+
+    if (reqPath === '/api/ontology/why-graph') {
+      const target = parsedUrl.query.target || 'DEC-2026-0915-PR93';
+      const graph = ontologyEngine.getWhyGraph(target);
+      return sendJson(res, 200, { target, whyGraph: graph });
+    }
+
+    if (reqPath === '/api/ontology/trust-passports') {
+      return sendJson(res, 200, { passports: ontologyEngine.getTrustPassports() });
+    }
+
+    // --- EGAC Evidence-Gated Autonomy Controller Endpoints ---
+
+    if (reqPath === '/api/egac/status') {
+      return sendJson(res, 200, {
+        engine: 'EGAC/v1 (Evidence-Gated Autonomy Controller)',
+        alphaThreshold: Number(intelEngine.egac.alpha.toFixed(6)),
+        costFalsePositive: intelEngine.egac.costFalsePositive,
+        costFalseNegative: intelEngine.egac.costFalseNegative,
+        evidenceTiers: EVIDENCE_TIERS,
+        planePriors: PLANE_PRIORS,
+        calibration: Object.fromEntries(
+          Object.entries(intelEngine.egac.calibration).map(([tier, cal]) => [
+            tier,
+            intelEngine.egac.calibrationStatus(tier),
+          ])
+        ),
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    if (reqPath === '/api/egac/fcr') {
+      const tiersParam = parsedUrl.query.tiers || 'tier_2';
+      const tierIds = tiersParam.split(',').map(t => t.trim());
+      const fcr = intelEngine.computeFCRBound(tierIds);
+      return sendJson(res, 200, {
+        tiers: tierIds,
+        fcrBound: fcr.bound,
+        isProvableZero: fcr.isProvableZero,
+        decomposition: fcr.perTier,
+        timestamp: new Date().toISOString(),
+      });
+    }
   }
 
   // --- 3. COMMAND & INGESTION PLANE ---
@@ -427,6 +511,69 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 200, { status: 'PROCESSED', tgResult });
       }
 
+      // EGAC Autonomy Decision (Evidence-Gated)
+      if (reqPath === '/api/egac/decide') {
+        const { repo, evidenceChain, verificationTiers } = payload;
+        if (!repo) return sendJson(res, 400, { error: 'Missing repo' });
+        const decision = intelEngine.evaluateAutonomy(
+          repo,
+          evidenceChain || [],
+          verificationTiers || []
+        );
+        realtimeHub.broadcast('egac.decision', decision);
+        return sendJson(res, 200, decision);
+      }
+
+      // EGAC Calibration Record
+      if (reqPath === '/api/egac/calibrate') {
+        const { tier, detected } = payload;
+        if (!tier) return sendJson(res, 400, { error: 'Missing tier' });
+        intelEngine.recordCalibration(tier, !!detected);
+        const status = intelEngine.egac.calibrationStatus(tier);
+        return sendJson(res, 200, {
+          status: 'CALIBRATED',
+          tier,
+          detected: !!detected,
+          calibration: status,
+        });
+      }
+
+      // Live Org Sync Command
+      if (reqPath === '/api/org/sync') {
+        try {
+          const syncRes = await githubAdapter.syncLiveOrg();
+          if (syncRes && syncRes.repos) {
+            projector.updateRepositories(syncRes.repos);
+            realtimeHub.broadcast('org.synced', {
+              totalRepos: syncRes.totalRepos,
+              totalOpenPrs: syncRes.totalOpenPrs,
+              timestamp: syncRes.lastSync
+            });
+          }
+          return sendJson(res, 200, syncRes);
+        } catch (err) {
+          return sendJson(res, 500, { error: err.message });
+        }
+      }
+
+      // Operational Decision Resolution (Approve / Reject)
+      if (reqPath.startsWith('/api/ontology/decisions/') && reqPath.endsWith('/action')) {
+        const parts = reqPath.split('/');
+        const decisionId = parts[4];
+        const { action, actor } = payload;
+        try {
+          const ticket = credentialBroker.requestScopedTicket({
+            actorId: actor || 'human-operator-jonas',
+            capability: `decision.${(action || 'resolve').toLowerCase()}`
+          });
+          const resolution = ontologyEngine.resolveDecision(decisionId, action, actor, ticket);
+          realtimeHub.broadcast('decision.resolved', resolution);
+          return sendJson(res, 200, resolution);
+        } catch (err) {
+          return sendJson(res, 400, { error: err.message });
+        }
+      }
+
       return sendJson(res, 404, { error: 'Endpoint not found' });
     });
     return;
@@ -480,5 +627,6 @@ module.exports = {
   vdsDaemon,
   telegramAdapter,
   githubAdapter,
-  credentialBroker
+  credentialBroker,
+  ontologyEngine
 };

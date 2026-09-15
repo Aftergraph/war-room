@@ -1,11 +1,22 @@
 /**
  * Aftergraph War Room — Enhanced Intelligence & Algorithmic Engines
- * 1. BayesianRiskEngine: Mathematical Bayesian Inference for Defect Probability P(Defect | Evidence)
+ * 1. BayesianRiskEngine: Heuristic Bayesian risk (legacy, kept for backward compat)
  * 2. MultiDimensionalCollisionEngine: Overlap across Repos, Branches, Files, Contracts & Authority
  * 3. WeibullHazardStallEngine: Time-decay hazard rate prediction for execution leases
  * 4. GlobalAttentionEngine: Multi-factor operational queue prioritization
  * 5. ContextContinuityEngine: Token entropy calculation & ACC Graph Slice generator
+ * 6. EvidenceGatedAutonomyController: Provable evidence-gated autonomy (EGAC)
+ *    Replaces heuristic risk with empirically grounded sequential Bayesian update
+ *    and provable FCR bound. Grounded in VAIE research / MISSION-Bench STUDY-008.
  */
+
+const {
+  EvidenceGatedAutonomyController,
+  wilsonCI,
+  hoeffdingSampleSize,
+  EVIDENCE_TIERS,
+  PLANE_PRIORS,
+} = require('../../../packages/egac/src');
 
 /**
  * 1. MATHEMATICAL BAYESIAN RISK ENGINE
@@ -336,6 +347,10 @@ class UnifiedIntelligenceEngine {
     this.anomaly = new TemporalAnomalyEngine();
     this.attention = new GlobalAttentionEngine();
     this.continuity = new ContextContinuityEngine();
+    this.egac = new EvidenceGatedAutonomyController({
+      costFalsePositive: 1,
+      costFalseNegative: 19,
+    });
   }
 
   async evaluateObservation(envelope, systemState) {
@@ -347,6 +362,28 @@ class UnifiedIntelligenceEngine {
       timestamp: new Date().toISOString()
     };
   }
+
+  /**
+   * EGAC evidence-gated autonomy decision.
+   * Replaces heuristic risk evaluation with provable FCR-bounded decision.
+   */
+  evaluateAutonomy(repoName, evidenceChain, verificationTiers) {
+    return this.egac.decide(repoName, evidenceChain, verificationTiers);
+  }
+
+  /**
+   * EGAC FCR bound computation for a set of verification tiers.
+   */
+  computeFCRBound(tierIds) {
+    return this.egac.computeFCRBound(tierIds);
+  }
+
+  /**
+   * EGAC online calibration: record an evidence outcome.
+   */
+  recordCalibration(tierId, detected) {
+    this.egac.recordCalibration(tierId, detected);
+  }
 }
 
 module.exports = {
@@ -356,5 +393,10 @@ module.exports = {
   TemporalAnomalyEngine,
   GlobalAttentionEngine,
   ContextContinuityEngine,
+  EvidenceGatedAutonomyController,
+  wilsonCI,
+  hoeffdingSampleSize,
+  EVIDENCE_TIERS,
+  PLANE_PRIORS,
   UnifiedIntelligenceEngine
 };

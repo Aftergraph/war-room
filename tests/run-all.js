@@ -42,6 +42,7 @@ const { TelegramAdapter } = require('../integrations/telegram/src/adapter');
 const { CredentialBroker } = require('../security/src/credentialBroker');
 const { TelegramBotRunner } = require('../integrations/telegram/bot-runner');
 const { sampleHardware } = require('../services/node-bridge/bridge-client');
+const { OperationalOntologyEngine } = require('../packages/ontology/src');
 
 async function runAllTests() {
   console.log('===============================================================');
@@ -428,6 +429,87 @@ async function runAllTests() {
     assert.ok(store.getEventCount() >= 3);
 
     fs.rmSync(testDir, { recursive: true, force: true });
+  });
+
+  // --- 12. OPERATIONAL ONTOLOGY, LIVE ORG SYNC & REALITY DIFF ---
+  console.log('\n--- 12. Operational Ontology, Live Org Sync & Reality Diff ---');
+  await testAsync('Live Aftergraph Org discovery pulls actual repositories and governance contracts', async () => {
+    const adapter = new GitHubAdapter({ org: 'Aftergraph' });
+    const syncRes = await adapter.syncLiveOrg();
+    assert.strictEqual(syncRes.success, true);
+    assert.ok(syncRes.totalRepos >= 28, `Expected at least 28 repos, got ${syncRes.totalRepos}`);
+    assert.ok(syncRes.totalOpenPrs >= 50, `Expected 50+ open PRs across org, got ${syncRes.totalOpenPrs}`);
+    
+    // Validate canonical repo exists with role
+    const govRepo = syncRes.repos.find(r => r.name === 'after-graph-governance');
+    assert.ok(govRepo);
+    assert.strictEqual(govRepo.role, 'canonical-contracts');
+    assert.strictEqual(govRepo.plane, 'GOVERNANCE');
+
+    const worksRepo = syncRes.repos.find(r => r.name === 'works-execution');
+    assert.ok(worksRepo);
+    assert.strictEqual(worksRepo.role, 'durable-execution');
+    assert.strictEqual(worksRepo.plane, 'EXECUTION');
+  });
+
+  test('Decision Objects and Decision Inbox resolution with Trust Gateway tickets', () => {
+    const ontology = new OperationalOntologyEngine();
+    const broker = new CredentialBroker();
+    const decisions = ontology.getDecisions();
+    assert.ok(decisions.length >= 3);
+
+    const prDecision = decisions.find(d => d.id === 'DEC-2026-0915-PR93');
+    assert.ok(prDecision);
+    assert.strictEqual(prDecision.status, 'PENDING');
+    assert.ok(prDecision.whyGraph.nodes.length >= 4);
+    assert.ok(prDecision.actionPreview.downstreamServices.length >= 2);
+
+    const ticket = broker.requestScopedTicket({
+      actorId: 'human-operator-jonas',
+      capability: 'decision.approve'
+    });
+
+    const resolution = ontology.resolveDecision(prDecision.id, 'APPROVE', 'human-operator-jonas', ticket);
+    assert.strictEqual(resolution.status, 'APPROVED');
+    assert.strictEqual(resolution.decisionId, 'DEC-2026-0915-PR93');
+    assert.ok(resolution.auditDigest);
+  });
+
+  test('Expected vs Observed Reality Diff computes accurate drift metrics', () => {
+    const ontology = new OperationalOntologyEngine();
+    const declaredState = {
+      schema_version: 'org-state/1.0',
+      repositories: [
+        { full_name: 'Aftergraph/works-execution', role: 'durable-execution', remote_head_short: 'b9e6d92' },
+        { full_name: 'Aftergraph/sentinel', role: 'verified-code-review', remote_head_short: 'ac6b194' }
+      ]
+    };
+    const observed = [
+      { name: 'works-execution', remoteHeadShort: 'b9e6d92', plane: 'EXECUTION' },
+      { name: 'sentinel', remoteHeadShort: 'ac6b194', plane: 'EXECUTION' },
+      { name: 'business-ops', remoteHeadShort: '130409a', plane: 'GOVERNANCE' }
+    ];
+
+    const diff = ontology.computeRealityDiff(declaredState, observed);
+    assert.strictEqual(diff.metrics.syncedCount, 2);
+    assert.strictEqual(diff.metrics.unregisteredCount, 1);
+    assert.strictEqual(diff.diffs.length, 3);
+  });
+
+  test('Agent Trust Passports enforce autonomy tiers and budget bounds', () => {
+    const ontology = new OperationalOntologyEngine();
+    const passports = ontology.getTrustPassports();
+    assert.ok(passports.length >= 4);
+
+    const sentinelPassport = passports.find(p => p.agentId === 'sentinel-bot');
+    assert.ok(sentinelPassport);
+    assert.strictEqual(sentinelPassport.tier, 'L3_BOUNDED_EXECUTOR');
+    assert.strictEqual(sentinelPassport.blastRadiusAllowance, 'REPOSITORIES_SCOPED');
+
+    const jonasPassport = passports.find(p => p.agentId === 'human-operator-jonas');
+    assert.ok(jonasPassport);
+    assert.strictEqual(jonasPassport.tier, 'L4_AUTONOMOUS');
+    assert.strictEqual(jonasPassport.blastRadiusAllowance, 'UNRESTRICTED');
   });
 
   console.log('\n===============================================================');
