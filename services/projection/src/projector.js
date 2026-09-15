@@ -65,7 +65,6 @@ class StateProjector {
 
     // Populate Initial Machines
     this.machines.set('lenovo-yoga-local', {
-      id: 'lenovo-yoga-local',
       name: 'Jonas Lenovo Yoga (Local Operator Bridge)',
       os: 'Windows 11 Pro / WSL2',
       status: 'ONLINE',
@@ -127,6 +126,35 @@ class StateProjector {
       evidenceCount: 9,
       verificationStatus: 'PARTIAL'
     });
+  }
+
+  /**
+   * Updates repository read models from live GitHub org discovery
+   */
+  updateRepositories(repoList = []) {
+    for (const r of repoList) {
+      const name = r.name || r.id;
+      if (!name) continue;
+      this.repositories.set(name, {
+        id: name,
+        name,
+        fullName: r.fullName || (name.includes('/') ? name : `Aftergraph/${name}`),
+        description: r.description || '',
+        role: r.role || this.inferPlane(name),
+        plane: r.plane || this.inferPlane(name),
+        defaultBranch: r.defaultBranch || 'main',
+        headSha: r.headSha || '7a89abb',
+        remoteHeadShort: r.remoteHeadShort || (r.headSha ? r.headSha.slice(0, 7) : '7a89abb'),
+        governanceStatus: r.governanceStatus || (name.includes('firetest') ? 'TEMPORARY_FIXTURE' : 'GOVERNED'),
+        epistemicStatus: r.epistemicStatus || EPISTEMIC_STATUS.OBSERVED,
+        isPrivate: r.isPrivate !== undefined ? r.isPrivate : false,
+        openPrCount: r.openPrCount || (r.openPrs ? r.openPrs.length : 0),
+        openPrs: r.openPrs || [],
+        latestCommit: r.latestCommit || null,
+        updatedAt: r.updatedAt || new Date().toISOString()
+      });
+      this.addGraphNode('Repository', name, { name, plane: r.plane || this.inferPlane(name), role: r.role });
+    }
   }
 
   inferPlane(name) {

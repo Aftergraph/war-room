@@ -46,6 +46,13 @@
             <span class="telemetry-lbl">FABRIC:</span>
             <span class="telemetry-val">99.98% SLO</span>
           </div>
+
+          <div class="telemetry-node telemetry-sync-node" id="btnLiveOrgSync" title="Aftergraph GitHub Organization (Click to Sync Live 31 Repos)" role="button" tabindex="0" aria-label="Sync Live GitHub Organization">
+            <span class="telemetry-dot dot-online dot-pulse"></span>
+            <span class="telemetry-lbl">AFTERGRAPH:</span>
+            <span class="telemetry-val" id="hudLiveOrgSummary"><strong id="hudLiveRepoCount">31</strong> REPOS</span>
+            <span class="telemetry-tag">⚡ SYNC</span>
+          </div>
         </div>
 
         <!-- Global Navigation Controls -->
@@ -253,9 +260,10 @@
             <div class="view-mode-toggle" role="group" aria-label="Topology View Mode">
               <button class="btn btn-sm btn-view-toggle active" id="btnViewGraph" aria-label="Switch to Interactive Topology Mesh View">🌐 Interactive Topology Mesh</button>
               <button class="btn btn-sm btn-view-toggle" id="btnViewGrid" aria-label="Switch to 30-Repo Grid View">▦ 30-Repo Grid</button>
+              <button class="btn btn-sm btn-view-toggle" id="btnViewRealityDiff" aria-label="Switch to Reality Diff View">⚖ Operational Twin Diff</button>
             </div>
             <input type="text" class="text-input" id="repoFilterInput" placeholder="Filter 30 repos..." aria-label="Filter Governed Repositories">
-            <span class="badge badge-pulse">28 Canonical + 2 Temporary Fixtures</span>
+            <span class="badge badge-pulse" id="repoSyncStatusBadge">31 Live Governed Repos</span>
           </div>
         </div>
 
@@ -300,6 +308,41 @@
         <!-- Dynamic 30-Repo Grid -->
         <div class="topology-grid" id="fullRepoGrid" style="display:none;">
           <!-- Populated by app.js -->
+        </div>
+
+        <!-- Reality Diff View (Palantir AIP-Style Expected vs Observed) -->
+        <div class="reality-diff-card" id="realityDiffContainer" style="display:none;">
+          <div class="diff-header-summary">
+            <div>
+              <h3 style="margin:0 0 0.25rem 0; font-size:1.05rem; display:flex; align-items:center; gap:0.5rem;">
+                <span>Operational Twin &bull; Expected vs Observed Reality Diff</span>
+                <span class="badge badge-emerald" id="realityDiffBadge">ALIGNMENT: 100%</span>
+              </h3>
+              <p class="form-hint" style="margin:0;">Declared Canonical Contracts (after-graph-governance/latest-org-state.json) compared against live observed GitHub HEAD SHAs and branch telemetry.</p>
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+              <button class="btn btn-sm btn-secondary" id="btnReconcileDiff">⚡ Refresh Contract Diff</button>
+            </div>
+          </div>
+          <div class="table-responsive" style="margin-top:1rem; overflow-x:auto;">
+            <table class="data-table" id="realityDiffTable" style="width:100%; border-collapse:collapse;">
+              <thead>
+                <tr>
+                  <th style="text-align:left; padding:0.6rem 0.75rem;">REPOSITORY</th>
+                  <th style="text-align:left; padding:0.6rem 0.75rem;">CANONICAL ROLE</th>
+                  <th style="text-align:left; padding:0.6rem 0.75rem;">PLANE</th>
+                  <th style="text-align:left; padding:0.6rem 0.75rem;">CONTRACT HEAD</th>
+                  <th style="text-align:left; padding:0.6rem 0.75rem;">LIVE HEAD</th>
+                  <th style="text-align:left; padding:0.6rem 0.75rem;">OPEN PRS</th>
+                  <th style="text-align:left; padding:0.6rem 0.75rem;">STATUS</th>
+                  <th style="text-align:left; padding:0.6rem 0.75rem;">OPERATIONAL ACTION</th>
+                </tr>
+              </thead>
+              <tbody id="realityDiffTableBody">
+                <!-- Populated dynamically by app.js -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -528,6 +571,16 @@
 
         <!-- Full Agent Fleet Breakdown -->
         <div class="agents-overview-grid" id="warroomAgentsGrid" style="margin-top:1.5rem;"></div>
+
+        <!-- Agent Trust Passports & Autonomy Frontier -->
+        <div class="trust-passports-card" style="margin-top:1.5rem;">
+          <div class="card-header-with-badge">
+            <h3>🛡️ Agent Trust Passports & Autonomy Frontier (L1 &rarr; L4)</h3>
+            <span class="badge" style="color:var(--accent-purple);">AIE Autonomy Contract</span>
+          </div>
+          <p class="form-hint" style="margin:0.25rem 0 1rem 0;">Governed operational agency boundaries: compute quotas, budget caps, blast radius bounds, and verified execution records.</p>
+          <div class="passports-grid" id="passportsGrid"></div>
+        </div>
       </div>
 
       <!-- ====================================================================
@@ -647,10 +700,28 @@
               🚨 Emergency Bot Quarantine
             </button>
           </div>
+        <!-- Operational Decision Inbox (Palantir AIP-Style Governed Action Substrate) -->
+        <div class="decision-inbox-card" id="decisionInboxCard">
+          <div class="card-header-with-badge">
+            <div style="display:flex; align-items:center; gap:0.6rem;">
+              <span class="telemetry-dot dot-online dot-pulse" style="background:var(--accent-cyan); box-shadow:0 0 10px var(--accent-cyan);"></span>
+              <h3 style="margin:0;">📥 Operational Decision Inbox (Governed Action Substrate)</h3>
+            </div>
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+              <span class="badge badge-emerald" id="decisionInboxPendingCount">3 Awaiting Authority</span>
+              <button class="btn btn-sm btn-secondary" id="btnRefreshDecisions">⚡ Refresh</button>
+            </div>
+          </div>
+          <p class="form-hint" style="margin:0.25rem 0 1rem 0;">
+            First-class Operational Decision Objects synthesized across Pull Requests, Governance Contracts, Collision Warnings, and Stale Verifications. 1-click execution backed by Trust Gateway signed tickets.
+          </p>
+          <div class="decision-inbox-grid" id="decisionInboxGrid">
+            <!-- Populated by app.js -->
+          </div>
         </div>
 
         <!-- "While You Were Away" Executive Briefing -->
-        <div class="briefing-card" id="whileYouWereAwayCard">
+        <div class="briefing-card" id="whileYouWereAwayCard" style="margin-top:1.5rem;">
           <div class="briefing-header">
             <h3>☀️ "While You Were Away" Executive Briefing</h3>
             <span class="badge badge-pulse" id="briefingTimestamp">Generated Just Now</span>
