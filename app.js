@@ -86,6 +86,26 @@ const el = {
   repoFilterInput: document.getElementById('repoFilterInput'),
   fullRepoGrid: document.getElementById('fullRepoGrid'),
 
+  // Domain 1: Reality (new)
+  btnViewRealityDiff: document.getElementById('btnViewRealityDiff'),
+  realityDiffContainer: document.getElementById('realityDiffContainer'),
+  realityDiffTableBody: document.getElementById('realityDiffTableBody'),
+  realityDiffBadge: document.getElementById('realityDiffBadge'),
+  btnReconcileDiff: document.getElementById('btnReconcileDiff'),
+  repoSyncStatusBadge: document.getElementById('repoSyncStatusBadge'),
+
+  // Live Org Sync (header)
+  btnLiveOrgSync: document.getElementById('btnLiveOrgSync'),
+  hudLiveRepoCount: document.getElementById('hudLiveRepoCount'),
+
+  // Decision Inbox (Domain 6)
+  decisionInboxGrid: document.getElementById('decisionInboxGrid'),
+  decisionInboxPendingCount: document.getElementById('decisionInboxPendingCount'),
+  btnRefreshDecisions: document.getElementById('btnRefreshDecisions'),
+
+  // Trust Passports (Domain 3)
+  passportsGrid: document.getElementById('passportsGrid'),
+
   // Domain 2: Missions
   missionDagCanvas: document.getElementById('missionDagCanvas'),
   leaseTableContainer: document.getElementById('leaseTableContainer'),
@@ -267,6 +287,26 @@ function bindEventListeners() {
     showToast('Settings saved successfully', 'success');
     el.settingsModal.style.display = 'none';
   });
+
+  // Live Org Sync
+  el.btnLiveOrgSync?.addEventListener('click', () => syncLiveOrg());
+
+  // Reality Diff view toggle
+  el.btnViewRealityDiff?.addEventListener('click', () => {
+    el.btnViewRealityDiff.classList.add('active');
+    el.btnViewGraph?.classList.remove('active');
+    el.btnViewGrid?.classList.remove('active');
+    if (el.realityMeshContainer) el.realityMeshContainer.style.display = 'none';
+    if (el.fullRepoGrid) el.fullRepoGrid.style.display = 'none';
+    if (el.realityDiffContainer) el.realityDiffContainer.style.display = 'block';
+    loadRealityDiff();
+  });
+
+  // Reconcile / Refresh Diff
+  el.btnReconcileDiff?.addEventListener('click', () => loadRealityDiff());
+
+  // Refresh Decision Inbox
+  el.btnRefreshDecisions?.addEventListener('click', () => loadDecisionInbox());
 }
 
 function switchDomain(domainId) {
@@ -366,6 +406,12 @@ async function loadWarRoomData() {
     renderAttentionQueue(state.attentionQueue);
     renderExternalApps(state.integrations);
     loadWhileYouWereAwayBriefing();
+
+    // Palantir AIP Operational Ontology
+    loadDecisionInbox();
+    loadTrustPassports();
+    loadRealityDiff();
+    loadEGACStatus();
 
     state.pollCountdown = state.pollInterval;
   } catch (err) {
@@ -996,6 +1042,202 @@ function copyCapsuleToClipboard() {
   });
 }
 
+/* ==========================================================================
+   LIVE ORG SYNC, REALITY DIFF, DECISION INBOX, TRUST PASSPORTS
+   Palantir AIP-style Operational Ontology frontend
+   ========================================================================== */
+
+async function syncLiveOrg() {
+  if (!el.btnLiveOrgSync) return;
+  showToast('Syncing 31 repos from Aftergraph GitHub...', 'info');
+  el.btnLiveOrgSync.style.opacity = '0.5';
+  try {
+    const res = await fetch('/api/org/sync');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const count = data.totalRepos || 31;
+    if (el.hudLiveRepoCount) el.hudLiveRepoCount.textContent = count;
+    if (el.repoSyncStatusBadge) el.repoSyncStatusBadge.textContent = `${count} Live Governed Repos`;
+    showToast(`Live sync complete: ${count} repos, ${data.totalOpenPrs || 0} open PRs`, 'success');
+    addTerminalLog('AUTH', `Live org synced: ${count} repos, ${data.totalOpenPrs || 0} PRs`);
+    await loadWarRoomData();
+  } catch (err) {
+    showToast(`Sync failed: ${err.message}`, 'error');
+  } finally {
+    el.btnLiveOrgSync.style.opacity = '1';
+  }
+}
+
+async function loadRealityDiff() {
+  if (!el.realityDiffTableBody) return;
+  try {
+    const res = await fetch('/api/ontology/reality-diff');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const diff = data.realityDiff;
+    if (!diff) return;
+
+    const metrics = diff.metrics || {};
+    const ratio = metrics.alignmentRatio || '100%';
+    if (el.realityDiffBadge) {
+      el.realityDiffBadge.textContent = `ALIGNMENT: ${ratio}`;
+      el.realityDiffBadge.className = `badge ${metrics.driftedCount > 0 ? 'badge-amber' : 'badge-emerald'}`;
+    }
+
+    const tbody = el.realityDiffTableBody;
+    tbody.innerHTML = '';
+    for (const d of (diff.diffs || [])) {
+      const tr = document.createElement('tr');
+      const statusClass = d.status === 'IN_SYNC' ? 'badge-emerald'
+        : d.status === 'HEAD_DRIFTED' ? 'badge-rose'
+        : 'badge-amber';
+      tr.innerHTML = `
+        <td style="padding:0.5rem 0.75rem;"><strong>${d.repoName || ''}</strong></td>
+        <td style="padding:0.5rem 0.75rem; color:var(--text-muted);">${d.role || ''}</td>
+        <td style="padding:0.5rem 0.75rem;"><span class="badge badge-sm">${d.plane || ''}</span></td>
+        <td style="padding:0.5rem 0.75rem; font-family:var(--mono-font);">${d.declaredHead || '—'}</td>
+        <td style="padding:0.5rem 0.75rem; font-family:var(--mono-font);">${d.observedHead || '—'}</td>
+        <td style="padding:0.5rem 0.75rem;">${d.openPrCount || 0}</td>
+        <td style="padding:0.5rem 0.75rem;"><span class="badge ${statusClass}">${d.status || ''}</span></td>
+        <td style="padding:0.5rem 0.75rem; color:var(--text-muted); font-size:0.8rem;">${d.recommendation || ''}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+    addTerminalLog('AUTH', `Reality diff loaded: ${metrics.syncedCount || 0} synced, ${metrics.driftedCount || 0} drifted, ${metrics.unregisteredCount || 0} unregistered`);
+  } catch (err) {
+    console.warn('[Reality Diff] Failed:', err.message);
+  }
+}
+
+async function loadDecisionInbox() {
+  if (!el.decisionInboxGrid) return;
+  try {
+    const res = await fetch('/api/ontology/decisions');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const decisions = data.decisions || [];
+
+    const pending = decisions.filter(d => d.status === 'PENDING');
+    if (el.decisionInboxPendingCount) {
+      el.decisionInboxPendingCount.textContent = `${pending.length} Awaiting Authority`;
+    }
+
+    const grid = el.decisionInboxGrid;
+    grid.innerHTML = '';
+    for (const d of decisions) {
+      const sevClass = d.severity === 'HIGH' ? 'badge-rose'
+        : d.severity === 'MEDIUM' ? 'badge-amber'
+        : 'badge-emerald';
+      const statusClass = d.status === 'PENDING' ? 'badge-pulse'
+        : d.status === 'APPROVED' ? 'badge-emerald'
+        : 'badge-rose';
+      const card = document.createElement('div');
+      card.className = 'decision-card';
+      card.style.cssText = 'background:var(--bg-card); border:1px solid var(--border); border-radius:0.5rem; padding:1rem; margin-bottom:0.75rem;';
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.5rem;">
+          <strong>${d.title || d.id}</strong>
+          <span class="badge ${sevClass}">${d.severity || 'LOW'}</span>
+        </div>
+        <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.5rem;">${d.category || ''} &bull; ${d.target || ''}</div>
+        ${d.actionPreview ? `<div style="font-size:0.85rem; margin-bottom:0.5rem;">${d.actionPreview.summary || ''}</div>` : ''}
+        ${d.actionPreview ? `<div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.5rem;">Impact: ${d.actionPreview.diffSummary || ''} &bull; Breaking: ${d.actionPreview.breakingRisk || 'N/A'}</div>` : ''}
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+          <span class="badge ${statusClass}">${d.status}</span>
+          <span style="font-size:0.75rem; color:var(--text-muted);">Confidence: ${((d.confidence || 0) * 100).toFixed(0)}%</span>
+          ${d.status === 'PENDING' ? `
+            <button class="btn btn-sm btn-primary" style="margin-left:auto;" onclick="resolveDecision('${d.id}', 'APPROVE')">Approve</button>
+            <button class="btn btn-sm btn-secondary" onclick="resolveDecision('${d.id}', 'REJECT')">Reject</button>
+          ` : ''}
+        </div>
+      `;
+      grid.appendChild(card);
+    }
+    addTerminalLog('AUTH', `Decision inbox loaded: ${decisions.length} items, ${pending.length} pending`);
+  } catch (err) {
+    console.warn('[Decision Inbox] Failed:', err.message);
+  }
+}
+
+async function resolveDecision(decisionId, action) {
+  try {
+    const res = await fetch(`/api/ontology/decisions/${decisionId}/action`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, actor: 'operator-web' })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const result = await res.json();
+    showToast(`Decision ${decisionId}: ${result.status}`, result.success ? 'success' : 'error');
+    addTerminalLog('AUTH', `Decision ${decisionId} ${action}d by operator-web. Ticket: ${result.resolutionTicket || 'N/A'}`);
+    await loadDecisionInbox();
+  } catch (err) {
+    showToast(`Failed: ${err.message}`, 'error');
+  }
+}
+
+async function loadTrustPassports() {
+  if (!el.passportsGrid) return;
+  try {
+    const res = await fetch('/api/ontology/trust-passports');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const passports = data.passports || [];
+
+    const grid = el.passportsGrid;
+    grid.innerHTML = '';
+    grid.style.cssText = 'display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:0.75rem;';
+
+    const tierColors = {
+      L4_AUTONOMOUS: '#10b981',
+      L3_BOUNDED_EXECUTOR: '#38bdf8',
+      L2_PROPOSER: '#f59e0b',
+      L1_OBSERVER: '#a855f7'
+    };
+
+    for (const p of passports) {
+      const tierColor = tierColors[p.tier] || '#64748b';
+      const budgetUsed = p.budgetCap ? ((p.spentToday / p.budgetCap) * 100).toFixed(1) : 0;
+      const card = document.createElement('div');
+      card.style.cssText = `background:var(--bg-card); border:1px solid ${tierColor}33; border-left:3px solid ${tierColor}; border-radius:0.5rem; padding:0.85rem;`;
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.4rem;">
+          <strong style="font-size:0.9rem;">${p.name || p.agentId}</strong>
+          <span class="badge badge-sm" style="color:${tierColor}; border-color:${tierColor}44;">${p.tier || ''}</span>
+        </div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.4rem;">${p.status || 'ACTIVE'} &bull; ${p.blastRadiusAllowance || ''}</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.4rem; font-size:0.75rem;">
+          <div>Budget: $${p.spentToday || 0}/${p.budgetCap || 0} (${budgetUsed}%)</div>
+          <div>Tokens: ${((p.tokensUsed || 0) / 1000).toFixed(0)}k/${((p.tokenLimit || 0) / 1000).toFixed(0)}k</div>
+          <div>Verified: ${p.verifiedActionsCount || 0} actions</div>
+          <div>Leases: ${(p.activeLeases || []).length} active</div>
+        </div>
+        <div style="margin-top:0.4rem; font-size:0.7rem; color:var(--text-muted);">
+          Caps: ${(p.allowedCapabilities || []).slice(0, 4).join(', ')}${(p.allowedCapabilities || []).length > 4 ? '...' : ''}
+        </div>
+      `;
+      grid.appendChild(card);
+    }
+  } catch (err) {
+    console.warn('[Trust Passports] Failed:', err.message);
+  }
+}
+
+/* ==========================================================================
+   EGAC Evidence-Gated Autonomy Controller — UI Integration
+   ========================================================================== */
+
+async function loadEGACStatus() {
+  try {
+    const res = await fetch('/api/egac/status');
+    if (!res.ok) return;
+    const data = await res.json();
+    addTerminalLog('AUTH', `EGAC: alpha=${data.alphaThreshold}, tiers=${Object.keys(data.evidenceTiers || {}).length}, engine=${data.engine?.split(' ')[0]}`);
+  } catch (err) {
+    // Offline — silent
+  }
+}
+
 /**
  * Toast Notification Utility
  */
@@ -1037,15 +1279,19 @@ function initViewModeToggle() {
   el.btnViewGraph.addEventListener('click', () => {
     el.btnViewGraph.classList.add('active');
     el.btnViewGrid.classList.remove('active');
+    el.btnViewRealityDiff?.classList.remove('active');
     if (el.realityMeshContainer) el.realityMeshContainer.style.display = 'flex';
     if (el.fullRepoGrid) el.fullRepoGrid.style.display = 'none';
+    if (el.realityDiffContainer) el.realityDiffContainer.style.display = 'none';
   });
 
   el.btnViewGrid.addEventListener('click', () => {
     el.btnViewGrid.classList.add('active');
     el.btnViewGraph.classList.remove('active');
+    el.btnViewRealityDiff?.classList.remove('active');
     if (el.realityMeshContainer) el.realityMeshContainer.style.display = 'none';
     if (el.fullRepoGrid) el.fullRepoGrid.style.display = 'grid';
+    if (el.realityDiffContainer) el.realityDiffContainer.style.display = 'none';
   });
 }
 
