@@ -24,7 +24,22 @@ const state = {
   pollTimer: null,
   countdownTimer: null,
   activeCapsule: null,
-  capsuleMode: 'markdown'
+  capsuleMode: 'markdown',
+  simulatedCollision: false,
+  timeMachinePlaying: false,
+  timeMachineInterval: null,
+  terminalFilter: 'all',
+  terminalPaused: false,
+  terminalLogs: [],
+  audioEnabled: true,
+  radarAngle: 0,
+  radarAnimationId: null,
+  realityMeshNodes: [],
+  realityMeshLinks: [],
+  realityMeshParticles: [],
+  realityMeshHoveredNode: null,
+  realityMeshAnimId: null,
+  selectedEntity: null
 };
 
 const SENTINEL_RULES = [
@@ -64,6 +79,10 @@ const el = {
   btnSettings: document.getElementById('btnSettings'),
 
   // Domain 1: Reality
+  btnViewGraph: document.getElementById('btnViewGraph'),
+  btnViewGrid: document.getElementById('btnViewGrid'),
+  realityMeshContainer: document.getElementById('realityMeshContainer'),
+  realityGraphCanvas: document.getElementById('realityGraphCanvas'),
   repoFilterInput: document.getElementById('repoFilterInput'),
   fullRepoGrid: document.getElementById('fullRepoGrid'),
 
@@ -71,11 +90,28 @@ const el = {
   missionDagCanvas: document.getElementById('missionDagCanvas'),
   leaseTableContainer: document.getElementById('leaseTableContainer'),
 
-  // Domain 3: Agents
+  // Domain 3: Agents & Radar
+  radarSweepCanvas: document.getElementById('radarSweepCanvas'),
+  btnSimulateCollision: document.getElementById('btnSimulateCollision'),
+  btnResetCollision: document.getElementById('btnResetCollision'),
+  radarTargetsList: document.getElementById('radarTargetsList'),
   collisionBadge: document.getElementById('collisionBadge'),
   collisionRadarBox: document.getElementById('collisionRadarBox'),
   collisionRadarMsg: document.getElementById('collisionRadarMsg'),
   warroomAgentsGrid: document.getElementById('warroomAgentsGrid'),
+
+  // Circular HUD Gauges
+  lenovoCpuCircle: document.getElementById('lenovoCpuCircle'),
+  lenovoCpuVal: document.getElementById('lenovoCpuVal'),
+  lenovoRamCircle: document.getElementById('lenovoRamCircle'),
+  lenovoRamVal: document.getElementById('lenovoRamVal'),
+  lenovoBatteryCircle: document.getElementById('lenovoBatteryCircle'),
+  lenovoBatteryVal: document.getElementById('lenovoBatteryVal'),
+  vdsCpuCircle: document.getElementById('vdsCpuCircle'),
+  vdsCpuVal: document.getElementById('vdsCpuVal'),
+  vdsRamCircle: document.getElementById('vdsRamCircle'),
+  vdsRamVal: document.getElementById('vdsRamVal'),
+  vdsContainerCircle: document.getElementById('vdsContainerCircle'),
 
   // Domain 4: Trust
   alBadgeCount: document.getElementById('alBadgeCount'),
@@ -85,6 +121,10 @@ const el = {
 
   // Domain 5: Evidence & Time Machine
   btnVerifyHashChain: document.getElementById('btnVerifyHashChain'),
+  btnTimeMachineStepBack: document.getElementById('btnTimeMachineStepBack'),
+  btnTimeMachinePlay: document.getElementById('btnTimeMachinePlay'),
+  btnTimeMachineStepForward: document.getElementById('btnTimeMachineStepForward'),
+  btnTimeMachineLive: document.getElementById('btnTimeMachineLive'),
   timeMachineSlider: document.getElementById('timeMachineSlider'),
   timeMachineLabel: document.getElementById('timeMachineLabel'),
   hashchainVerifyBadge: document.getElementById('hashchainVerifyBadge'),
@@ -120,6 +160,32 @@ const el = {
   capsuleSubtitle: document.getElementById('capsuleSubtitle'),
   capsuleFreshness: document.getElementById('capsuleFreshness'),
 
+  // Deep Entity Detail Drawer
+  detailDrawer: document.getElementById('detailDrawer'),
+  drawerEntityTitle: document.getElementById('drawerEntityTitle'),
+  drawerEntitySub: document.getElementById('drawerEntitySub'),
+  drawerPlaneBadge: document.getElementById('drawerPlaneBadge'),
+  drawerBranch: document.getElementById('drawerBranch'),
+  drawerHeadSha: document.getElementById('drawerHeadSha'),
+  drawerHeadMsg: document.getElementById('drawerHeadMsg'),
+  drawerLastVerified: document.getElementById('drawerLastVerified'),
+  drawerSentinelVerdict: document.getElementById('drawerSentinelVerdict'),
+  drawerSentinelDetail: document.getElementById('drawerSentinelDetail'),
+  drawerBlastList: document.getElementById('drawerBlastList'),
+  drawerLeasesList: document.getElementById('drawerLeasesList'),
+  btnCloseDrawer: document.getElementById('btnCloseDrawer'),
+  btnDrawerCapsule: document.getElementById('btnDrawerCapsule'),
+  btnDrawerSentinelVerify: document.getElementById('btnDrawerSentinelVerify'),
+
+  // Docked Cyber Terminal
+  cyberTerminal: document.getElementById('cyberTerminal'),
+  terminalBar: document.getElementById('terminalBar'),
+  terminalEventCount: document.getElementById('terminalEventCount'),
+  btnPauseTerminal: document.getElementById('btnPauseTerminal'),
+  btnClearTerminal: document.getElementById('btnClearTerminal'),
+  btnToggleTerminal: document.getElementById('btnToggleTerminal'),
+  terminalLogs: document.getElementById('terminalLogs'),
+
   // Settings Modal
   settingsModal: document.getElementById('settingsModal'),
   btnCloseSettings: document.getElementById('btnCloseSettings'),
@@ -140,7 +206,14 @@ async function init() {
   bindEventListeners();
   initCommandPalette();
   initTimeMachine();
+  initTimeMachineControls();
   renderSentinelRules();
+  initViewModeToggle();
+  initRealityGraphCanvas();
+  initRadarSweepCanvas();
+  initDetailDrawer();
+  initCyberTerminal();
+  initAudioSynthesizer();
   startPolling();
   connectRealtimeStream();
 
@@ -224,6 +297,7 @@ function connectRealtimeStream() {
     const evtSource = new EventSource('/api/realtime/stream');
     evtSource.addEventListener('connected', () => {
       el.pulseStatus.textContent = 'WAR ROOM LIVE (SSE)';
+      addTerminalLog('telemetry', 'Connected to SSE Realtime Event Fabric');
     });
 
     evtSource.addEventListener('observation', (e) => {
@@ -237,6 +311,8 @@ function connectRealtimeStream() {
       try {
         const data = JSON.parse(e.data);
         showToast(`ALERT: ${data.type} on ${data.target}`, 'warning');
+        addTerminalLog('hazard', `ALERT: ${data.type} on ${data.target}`);
+        playHazardTone();
       } catch (err) {}
     });
 
@@ -252,6 +328,10 @@ function handleLiveObservation(data) {
   // Update attention or stats
   if (data.intel?.risk?.score > 70) {
     showToast(`High-Risk Event Detected in ${data.envelope?.subject?.id}`, 'warning');
+    addTerminalLog('hazard', `High-Risk (${data.intel.risk.score}) detected in ${data.envelope?.subject?.id}`);
+    playHazardTone();
+  } else {
+    addTerminalLog('auth', `Observation recorded for ${data.envelope?.subject?.id || 'system'}`);
   }
 }
 
@@ -274,10 +354,13 @@ async function loadWarRoomData() {
 
     updateMetricsHeader(summary, data.quota);
     updateTelemetryBar(data.compute);
+    updateHudGauges(data.compute);
     renderRepoGrid();
+    updateRealityMeshTopology(state.repos);
     renderMissions(state.missions);
     renderAgents(state.agents);
     renderCollisionRadar();
+    updateRadarTargets(state.agents);
     renderIntelligenceViews();
     renderHashChain(summary.hashChainSummary);
     renderAttentionQueue(state.attentionQueue);
@@ -287,7 +370,6 @@ async function loadWarRoomData() {
     state.pollCountdown = state.pollInterval;
   } catch (err) {
     console.warn('[WarRoom API] Offline or fallback:', err.message);
-    // Use fallback algorithms if offline
     if (window.WarRoomAlgorithms && window.seedData) {
       renderRepoGrid();
     }
@@ -815,12 +897,24 @@ function renderCmdPaletteDefaults() {
 
 function renderCmdPaletteResults(results = []) {
   if (!el.cmdPaletteResults) return;
-  if (results.length === 0) {
+  let items = [];
+  if (Array.isArray(results)) {
+    items = results;
+  } else if (typeof results === 'string') {
+    const q = results.toLowerCase();
+    items = (state.repos || []).filter(r => r.name.toLowerCase().includes(q)).map(r => ({
+      type: 'Repository',
+      id: r.name,
+      title: r.name,
+      detail: `Plane: ${r.plane} • Default: ${r.defaultBranch || 'main'}`
+    }));
+  }
+  if (!items || items.length === 0) {
     el.cmdPaletteResults.innerHTML = `<div class="cmd-empty">No matching repos, missions, or agents.</div>`;
     return;
   }
 
-  el.cmdPaletteResults.innerHTML = results.map(r => `
+  el.cmdPaletteResults.innerHTML = items.map(r => `
     <div class="cmd-item" onclick="handleCmdSelect('${r.type}', '${r.id}');">
       <strong>[${r.type}] ${r.title}</strong>
       <span>${r.detail}</span>
@@ -935,5 +1029,864 @@ function startPolling() {
   }, 1000);
 }
 
+/* ==========================================================================
+   VIEW MODE TOGGLE (INTERACTIVE MESH VS 30-REPO GRID)
+   ========================================================================== */
+function initViewModeToggle() {
+  if (!el.btnViewGraph || !el.btnViewGrid) return;
+  el.btnViewGraph.addEventListener('click', () => {
+    el.btnViewGraph.classList.add('active');
+    el.btnViewGrid.classList.remove('active');
+    if (el.realityMeshContainer) el.realityMeshContainer.style.display = 'flex';
+    if (el.fullRepoGrid) el.fullRepoGrid.style.display = 'none';
+  });
+
+  el.btnViewGrid.addEventListener('click', () => {
+    el.btnViewGrid.classList.add('active');
+    el.btnViewGraph.classList.remove('active');
+    if (el.realityMeshContainer) el.realityMeshContainer.style.display = 'none';
+    if (el.fullRepoGrid) el.fullRepoGrid.style.display = 'grid';
+  });
+}
+
+/* ==========================================================================
+   INTERACTIVE SYSTEM REALITY TOPOLOGY MESH (CANVAS 2D)
+   ========================================================================== */
+const PLANE_COLORS = {
+  PUBLIC_SURFACES: '#38bdf8',
+  WORK_EXPERIENCES: '#ec4899',
+  WORK_INGESTION: '#f59e0b',
+  GOVERNANCE_AUTHORITY: '#a855f7',
+  EXECUTION_INFRA: '#10b981',
+  AGENT_FLEET: '#6366f1',
+  ASSURANCE_LEDGER: '#14b8a6',
+  CORE: '#06b6d4'
+};
+
+function initRealityGraphCanvas() {
+  const canvas = el.realityGraphCanvas;
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  let animationId = null;
+
+  // Track mouse coordinates for hover
+  let mouse = { x: -1000, y: -1000 };
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    mouse.x = (e.clientX - rect.left) * scaleX;
+    mouse.y = (e.clientY - rect.top) * scaleY;
+
+    // Detect hovered node
+    let found = null;
+    for (const node of state.realityMeshNodes) {
+      const dx = mouse.x - node.x;
+      const dy = mouse.y - node.y;
+      if (Math.hypot(dx, dy) <= node.radius + 6) {
+        found = node;
+        break;
+      }
+    }
+    state.realityMeshHoveredNode = found;
+    canvas.style.cursor = found ? 'pointer' : 'crosshair';
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    mouse.x = -1000;
+    mouse.y = -1000;
+    state.realityMeshHoveredNode = null;
+    canvas.style.cursor = 'crosshair';
+  });
+
+  canvas.addEventListener('click', () => {
+    if (state.realityMeshHoveredNode) {
+      openEntityDetail(state.realityMeshHoveredNode);
+      playCyberChime();
+    }
+  });
+
+  // Render loop
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 1. Draw subtle column plane bands
+    const colWidth = canvas.width / 7;
+    const planeLabels = ['01 PLATFORM', '02 EXPERIENCE', '03 INGESTION', '04 GOVERNANCE', '05 EXECUTION', '06 AGENTS', '07 ASSURANCE'];
+    
+    ctx.font = '9px "JetBrains Mono", monospace';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.textAlign = 'center';
+
+    for (let i = 0; i < 7; i++) {
+      const cx = i * colWidth + colWidth / 2;
+      ctx.fillText(planeLabels[i], cx, 22);
+
+      // subtle vertical grid divider
+      if (i > 0) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.035)';
+        ctx.beginPath();
+        ctx.moveTo(i * colWidth, 30);
+        ctx.lineTo(i * colWidth, canvas.height - 10);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Draw dependency link curves
+    for (const link of state.realityMeshLinks) {
+      const src = link.source;
+      const tgt = link.target;
+      if (!src || !tgt) continue;
+
+      const isHovered = (state.realityMeshHoveredNode && 
+        (state.realityMeshHoveredNode.id === src.id || state.realityMeshHoveredNode.id === tgt.id));
+
+      ctx.beginPath();
+      ctx.moveTo(src.x, src.y);
+      const midX = (src.x + tgt.x) / 2;
+      ctx.bezierCurveTo(midX, src.y, midX, tgt.y, tgt.x, tgt.y);
+
+      if (isHovered) {
+        ctx.strokeStyle = 'rgba(6, 182, 212, 0.85)';
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = 'rgba(6, 182, 212, 0.6)';
+        ctx.shadowBlur = 8;
+      } else {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.lineWidth = 1.0;
+        ctx.shadowBlur = 0;
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    // 3. Draw animated glowing particle packets
+    for (const p of state.realityMeshParticles) {
+      p.t += p.speed;
+      if (p.t > 1) p.t = 0;
+
+      const src = p.link.source;
+      const tgt = p.link.target;
+      if (!src || !tgt) continue;
+
+      const midX = (src.x + tgt.x) / 2;
+      // Cubic Bezier position
+      const u = 1 - p.t;
+      const px = u*u*u*src.x + 3*u*u*p.t*midX + 3*u*p.t*p.t*midX + p.t*p.t*p.t*tgt.x;
+      const py = u*u*u*src.y + 3*u*u*p.t*src.y + 3*u*p.t*p.t*tgt.y + p.t*p.t*p.t*tgt.y;
+
+      ctx.beginPath();
+      ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = p.color || '#06b6d4';
+      ctx.shadowColor = p.color || '#06b6d4';
+      ctx.shadowBlur = 6;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    // 4. Draw topology nodes
+    for (const node of state.realityMeshNodes) {
+      const isHovered = state.realityMeshHoveredNode === node;
+      const color = PLANE_COLORS[node.plane] || '#06b6d4';
+
+      // Outer glow or pulsing ring if hovered
+      if (isHovered) {
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.radius + 6, 0, Math.PI * 2);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 14;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      // Core Node circle
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+      ctx.fillStyle = isHovered ? '#1e293b' : '#0f172a';
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = isHovered ? 2.5 : 1.5;
+      ctx.stroke();
+
+      // Node inner dot
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      // Node text label
+      ctx.font = '10px "JetBrains Mono", monospace';
+      ctx.fillStyle = isHovered ? '#ffffff' : '#94a3b8';
+      ctx.textAlign = 'center';
+      ctx.fillText(node.name, node.x, node.y + node.radius + 13);
+    }
+
+    // 5. Tooltip HUD if node hovered
+    if (state.realityMeshHoveredNode) {
+      const n = state.realityMeshHoveredNode;
+      const tipX = Math.min(canvas.width - 240, Math.max(20, n.x - 110));
+      const tipY = n.y < 120 ? n.y + 35 : n.y - 85;
+
+      ctx.fillStyle = 'rgba(10, 14, 23, 0.95)';
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(tipX, tipY, 220, 68, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.textAlign = 'left';
+      ctx.font = 'bold 11px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillText(n.name, tipX + 10, tipY + 18);
+
+      ctx.font = '9px "Inter", sans-serif';
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText(`Plane: ${n.plane}`, tipX + 10, tipY + 34);
+      ctx.fillText(`HEAD: ${n.headSha || '7a89abb'} • ${n.epistemicStatus || 'GOVERNED'}`, tipX + 10, tipY + 48);
+      
+      ctx.font = '9px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#10b981';
+      ctx.fillText(`Sentinel: SPEC-001 Pass · Click to Inspect`, tipX + 10, tipY + 62);
+    }
+
+    animationId = requestAnimationFrame(draw);
+  }
+
+  animationId = requestAnimationFrame(draw);
+  state.realityMeshAnimId = animationId;
+}
+
+function updateRealityMeshTopology(repos = []) {
+  if (!repos || repos.length === 0) return;
+
+  const canvas = el.realityGraphCanvas;
+  if (!canvas) return;
+
+  const width = canvas.width;
+  const height = canvas.height;
+  const colWidth = width / 7;
+
+  // Organize repos into 7 planes
+  const planeBuckets = {
+    PUBLIC_SURFACES: [],
+    WORK_EXPERIENCES: [],
+    WORK_INGESTION: [],
+    GOVERNANCE_AUTHORITY: [],
+    EXECUTION_INFRA: [],
+    AGENT_FLEET: [],
+    ASSURANCE_LEDGER: []
+  };
+
+  repos.forEach(r => {
+    const p = r.plane || 'CORE';
+    if (planeBuckets[p]) {
+      planeBuckets[p].push(r);
+    } else {
+      planeBuckets.GOVERNANCE_AUTHORITY.push(r);
+    }
+  });
+
+  const nodes = [];
+  const planeKeys = Object.keys(planeBuckets);
+
+  planeKeys.forEach((key, colIdx) => {
+    const list = planeBuckets[key];
+    const count = list.length;
+    const startX = colIdx * colWidth + colWidth / 2;
+    const stepY = (height - 80) / Math.max(count, 1);
+
+    list.forEach((repo, rowIdx) => {
+      const y = 50 + rowIdx * stepY + (stepY / 2);
+      nodes.push({
+        id: repo.name,
+        name: repo.name,
+        plane: repo.plane || key,
+        headSha: (repo.headSha || '7a89abb').substring(0, 7),
+        epistemicStatus: repo.epistemicStatus || 'GOVERNED',
+        defaultBranch: repo.defaultBranch || 'main',
+        x: startX,
+        y: y,
+        radius: 12
+      });
+    });
+  });
+
+  state.realityMeshNodes = nodes;
+
+  // Build canonical inter-plane links
+  const links = [];
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+  // Connect primary spine: ingestion -> governance -> execution -> assurance
+  const connectIfExist = (srcId, tgtId) => {
+    const s = nodeMap.get(srcId);
+    const t = nodeMap.get(tgtId);
+    if (s && t) links.push({ source: s, target: t });
+  };
+
+  connectIfExist('work-ingest', 'trust-gateway');
+  connectIfExist('trust-gateway', 'works-execution');
+  connectIfExist('works-execution', 'forge');
+  connectIfExist('forge', 'sentinel');
+  connectIfExist('sentinel', 'audit-ledger');
+  connectIfExist('contracts', 'trust-gateway');
+  connectIfExist('governance', 'contracts');
+  connectIfExist('studio', 'works-execution');
+  connectIfExist('aftergraph.org', 'public-api');
+  connectIfExist('hermes', 'telegram-bridge');
+  connectIfExist('hermes', 'trust-gateway');
+  connectIfExist('chatgpt-codex-connector', 'works-execution');
+  connectIfExist('atlas', 'works-execution');
+
+  state.realityMeshLinks = links;
+
+  // Spawn animated data particles
+  state.realityMeshParticles = links.map((l, idx) => ({
+    link: l,
+    t: (idx / links.length),
+    speed: 0.004 + (idx % 3) * 0.002,
+    color: PLANE_COLORS[l.source.plane] || '#06b6d4'
+  }));
+}
+
+/* ==========================================================================
+   MULTI-DIMENSIONAL RADAR SWEEP PPI CANVAS (DOMAIN 03)
+   ========================================================================== */
+function initRadarSweepCanvas() {
+  const canvas = el.radarSweepCanvas;
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const maxRadius = cx - 18;
+
+  const fleetBlips = [
+    { id: 'forge', label: 'forge-worker-01', r: 130, angle: 0.85, role: 'works-execution', ping: 0 },
+    { id: 'sentinel', label: 'sentinel-gate', r: 180, angle: 2.35, role: 'exact-HEAD pre-merge', ping: 0 },
+    { id: 'codex', label: 'codex-pr-reviewer', r: 110, angle: 3.55, role: 'automated review', ping: 0 },
+    { id: 'hermes', label: 'hermes-telegram', r: 160, angle: 5.10, role: 'routing fabric', ping: 0 },
+    { id: 'lenovo', label: 'jonas-lenovo-local', r: 75, angle: 0.35, role: 'local operator slice', ping: 0 }
+  ];
+
+  // Wire controls
+  el.btnSimulateCollision?.addEventListener('click', () => {
+    state.simulatedCollision = true;
+    showToast('Simulating Bot Contention: forge vs codex', 'warning');
+    addTerminalLog('hazard', 'Collision alert simulated on studio/PR#42 (forge vs codex)');
+    playHazardTone();
+    renderCollisionRadar();
+  });
+
+  el.btnResetCollision?.addEventListener('click', () => {
+    state.simulatedCollision = false;
+    showToast('Collision Vector Cleared', 'success');
+    addTerminalLog('fleet', 'Collision Radar vectors cleared by operator');
+    playCyberChime();
+    renderCollisionRadar();
+  });
+
+  function drawRadar() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 1. Draw range rings
+    const rings = [0.25, 0.50, 0.75, 1.0];
+    ctx.strokeStyle = 'rgba(6, 182, 212, 0.22)';
+    ctx.lineWidth = 1;
+
+    rings.forEach(fraction => {
+      ctx.beginPath();
+      ctx.arc(cx, cy, maxRadius * fraction, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+
+    // 2. Draw crosshairs
+    ctx.strokeStyle = 'rgba(6, 182, 212, 0.28)';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - maxRadius);
+    ctx.lineTo(cx, cy + maxRadius);
+    ctx.moveTo(cx - maxRadius, cy);
+    ctx.lineTo(cx + maxRadius, cy);
+    ctx.stroke();
+
+    // 3. Draw 360° rotating sweep beam
+    state.radarAngle += 0.032;
+    if (state.radarAngle > Math.PI * 2) state.radarAngle -= Math.PI * 2;
+
+    const sweepAngle = state.radarAngle;
+    const trailSegments = 30;
+    const trailStep = 0.025;
+
+    for (let i = 0; i < trailSegments; i++) {
+      const a = sweepAngle - i * trailStep;
+      const alpha = (1 - (i / trailSegments)) * 0.18;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, maxRadius, a - trailStep, a);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(6, 182, 212, ${alpha})`;
+      ctx.fill();
+    }
+
+    // Leading sweep line
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(sweepAngle) * maxRadius, cy + Math.sin(sweepAngle) * maxRadius);
+    ctx.strokeStyle = 'rgba(6, 182, 212, 0.85)';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = '#06b6d4';
+    ctx.shadowBlur = 10;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // 4. Check sweep collision with fleet blips
+    const now = Date.now();
+    fleetBlips.forEach(blip => {
+      const angleDiff = Math.abs(sweepAngle - blip.angle);
+      if (angleDiff < 0.04 || Math.abs(angleDiff - Math.PI * 2) < 0.04) {
+        blip.ping = now;
+        playRadarPing();
+      }
+
+      // Convert polar to cartesian
+      const bx = cx + Math.cos(blip.angle) * blip.r;
+      const by = cy + Math.sin(blip.angle) * blip.r;
+
+      const timeSincePing = now - blip.ping;
+      const isRecentlyPinged = timeSincePing < 1200;
+      const isColliding = state.simulatedCollision && (blip.id === 'forge' || blip.id === 'codex');
+
+      // Outer ping ripple
+      if (isRecentlyPinged) {
+        const rippleR = 8 + (timeSincePing / 1200) * 16;
+        const rippleAlpha = 1 - (timeSincePing / 1200);
+        ctx.beginPath();
+        ctx.arc(bx, by, rippleR, 0, Math.PI * 2);
+        ctx.strokeStyle = isColliding ? `rgba(244, 63, 94, ${rippleAlpha})` : `rgba(16, 185, 129, ${rippleAlpha})`;
+        ctx.stroke();
+      }
+
+      // Blip core dot
+      ctx.beginPath();
+      ctx.arc(bx, by, 4, 0, Math.PI * 2);
+      ctx.fillStyle = isColliding ? '#f43f5e' : (isRecentlyPinged ? '#10b981' : 'rgba(6, 182, 212, 0.8)');
+      ctx.shadowColor = isColliding ? '#f43f5e' : '#10b981';
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Blip label
+      ctx.font = '9px "JetBrains Mono", monospace';
+      ctx.fillStyle = isColliding ? '#f43f5e' : '#cbd5e1';
+      ctx.fillText(blip.id, bx + 7, by + 3);
+    });
+
+    // 5. Draw red collision vector line if contention simulated
+    if (state.simulatedCollision) {
+      const b1 = fleetBlips[0]; // forge
+      const b2 = fleetBlips[2]; // codex
+      const b1x = cx + Math.cos(b1.angle) * b1.r;
+      const b1y = cy + Math.sin(b1.angle) * b1.r;
+      const b2x = cx + Math.cos(b2.angle) * b2.r;
+      const b2y = cy + Math.sin(b2.angle) * b2.r;
+
+      ctx.beginPath();
+      ctx.setLineDash([5, 4]);
+      ctx.moveTo(b1x, b1y);
+      ctx.lineTo(b2x, b2y);
+      ctx.strokeStyle = '#f43f5e';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = '#f43f5e';
+      ctx.shadowBlur = 12;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.shadowBlur = 0;
+
+      ctx.font = 'bold 9px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#f43f5e';
+      ctx.textAlign = 'center';
+      ctx.fillText('CONTENTION VECTOR', (b1x + b2x) / 2, (b1y + b2y) / 2 - 8);
+    }
+
+    state.radarAnimationId = requestAnimationFrame(drawRadar);
+  }
+
+  state.radarAnimationId = requestAnimationFrame(drawRadar);
+}
+
+function updateRadarTargets(agents = []) {
+  if (!el.radarTargetsList) return;
+  const list = [
+    { id: 'forge', name: 'forge-worker-pool', role: 'Execution Leases', node: 'vds-eu-central-01', status: 'ACTIVE' },
+    { id: 'sentinel', name: 'sentinel-safety-radar', role: 'Pre-Merge Verification', node: 'cloud-slices', status: 'ENFORCING' },
+    { id: 'codex', name: 'chatgpt-codex-connector', role: 'PR Review / AST', node: 'lenovo-yoga-local', status: 'REVIEWING' },
+    { id: 'hermes', name: 'hermes-telegram-agent', role: 'Telegram Bot Gateway', node: 'vds-eu-central-01', status: 'ONLINE' }
+  ];
+
+  el.radarTargetsList.innerHTML = list.map(t => {
+    const isColliding = state.simulatedCollision && (t.id === 'forge' || t.id === 'codex');
+    return `
+      <div class="radar-target-card ${isColliding ? 'collision-warning' : ''}" onclick="openEntityDetail({ name: '${t.name}', plane: 'AGENT_FLEET', epistemicStatus: '${t.status}' })">
+        <div class="radar-target-top">
+          <strong>${t.name}</strong>
+          <span class="badge ${isColliding ? 'badge-danger' : 'badge-emerald'}">${isColliding ? 'COLLISION' : t.status}</span>
+        </div>
+        <div class="metric-meta">${t.role} • <code>${t.node}</code></div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ==========================================================================
+   CIRCULAR HUD TELEMETRY SVG GAUGES
+   ========================================================================== */
+function updateHudGauges(compute = {}) {
+  const CIRCUMFERENCE = 251.2; // 2 * pi * 40
+
+  const setOffset = (circleEl, pct) => {
+    if (!circleEl) return;
+    const clamped = Math.max(0, Math.min(100, pct));
+    const offset = CIRCUMFERENCE - (CIRCUMFERENCE * clamped / 100);
+    circleEl.style.strokeDashoffset = offset;
+  };
+
+  const lenovoCpu = compute.lenovo?.cpuUsage || 22;
+  const lenovoRam = compute.lenovo?.ramUsage || 48;
+  const vdsCpu = compute.vds?.cpuUsage || 31;
+  const vdsRam = compute.vds?.ramUsage || 42;
+
+  setOffset(el.lenovoCpuCircle, lenovoCpu);
+  setOffset(el.lenovoRamCircle, lenovoRam);
+  setOffset(el.lenovoBatteryCircle, 94);
+
+  setOffset(el.vdsCpuCircle, vdsCpu);
+  setOffset(el.vdsRamCircle, vdsRam);
+  setOffset(el.vdsContainerCircle, 75);
+
+  if (el.lenovoCpuVal) el.lenovoCpuVal.textContent = `${lenovoCpu}%`;
+  if (el.lenovoRamVal) el.lenovoRamVal.textContent = `${lenovoRam}%`;
+  if (el.vdsCpuVal) el.vdsCpuVal.textContent = `${vdsCpu}%`;
+  if (el.vdsRamVal) el.vdsRamVal.textContent = `${vdsRam}%`;
+}
+
+/* ==========================================================================
+   TIME MACHINE PLAYBACK CONTROLS
+   ========================================================================== */
+function initTimeMachineControls() {
+  if (!el.btnTimeMachinePlay || !el.timeMachineSlider) return;
+
+  el.btnTimeMachinePlay.addEventListener('click', () => {
+    state.timeMachinePlaying = !state.timeMachinePlaying;
+    if (state.timeMachinePlaying) {
+      el.btnTimeMachinePlay.textContent = '⏸ Pause Timeline';
+      playCyberChime();
+
+      // Start looping from current slider value up to 100
+      if (parseInt(el.timeMachineSlider.value, 10) >= 100) {
+        el.timeMachineSlider.value = 0;
+      }
+
+      state.timeMachineInterval = setInterval(() => {
+        let val = parseInt(el.timeMachineSlider.value, 10);
+        val += 2;
+        if (val >= 100) {
+          val = 100;
+          clearInterval(state.timeMachineInterval);
+          state.timeMachinePlaying = false;
+          el.btnTimeMachinePlay.textContent = '▶ Play Timeline';
+          showToast('Time Machine scrubbed to live HEAD', 'success');
+        }
+        el.timeMachineSlider.value = val;
+        el.timeMachineSlider.dispatchEvent(new Event('input'));
+      }, 300);
+    } else {
+      clearInterval(state.timeMachineInterval);
+      el.btnTimeMachinePlay.textContent = '▶ Play Timeline';
+    }
+  });
+
+  el.btnTimeMachineStepBack?.addEventListener('click', () => {
+    let val = parseInt(el.timeMachineSlider.value, 10) - 10;
+    el.timeMachineSlider.value = Math.max(0, val);
+    el.timeMachineSlider.dispatchEvent(new Event('input'));
+    playRadarPing();
+  });
+
+  el.btnTimeMachineStepForward?.addEventListener('click', () => {
+    let val = parseInt(el.timeMachineSlider.value, 10) + 10;
+    el.timeMachineSlider.value = Math.min(100, val);
+    el.timeMachineSlider.dispatchEvent(new Event('input'));
+    playRadarPing();
+  });
+
+  el.btnTimeMachineLive?.addEventListener('click', () => {
+    if (state.timeMachineInterval) clearInterval(state.timeMachineInterval);
+    state.timeMachinePlaying = false;
+    if (el.btnTimeMachinePlay) el.btnTimeMachinePlay.textContent = '▶ Play Timeline';
+    el.timeMachineSlider.value = 100;
+    el.timeMachineSlider.dispatchEvent(new Event('input'));
+    playCyberChime();
+  });
+}
+
+/* ==========================================================================
+   DEEP ENTITY DETAIL DRAWER
+   ========================================================================== */
+function initDetailDrawer() {
+  el.btnCloseDrawer?.addEventListener('click', closeEntityDetail);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && el.detailDrawer?.classList.contains('open')) {
+      closeEntityDetail();
+    }
+  });
+
+  el.btnDrawerCapsule?.addEventListener('click', () => {
+    if (state.selectedEntity) {
+      openRepoCapsule(state.selectedEntity.name || state.selectedEntity.id);
+    }
+  });
+
+  el.btnDrawerSentinelVerify?.addEventListener('click', () => {
+    showToast(`Running Sentinel pack 1.7.0 benchmark suite on ${state.selectedEntity?.name || 'repo'}...`, 'info');
+    setTimeout(() => {
+      showToast(`26/26 benchmarks PASSED @ ${state.selectedEntity?.headSha || '7a89abb'}`, 'success');
+      playCyberChime();
+    }, 450);
+  });
+}
+
+function openEntityDetail(entity) {
+  if (!el.detailDrawer) return;
+  state.selectedEntity = entity;
+
+  if (el.drawerEntityTitle) el.drawerEntityTitle.textContent = entity.name || entity.id;
+  if (el.drawerEntitySub) el.drawerEntitySub.textContent = `Epistemic Status: ${entity.epistemicStatus || 'GOVERNED'}`;
+  if (el.drawerPlaneBadge) el.drawerPlaneBadge.textContent = `PLANE: ${entity.plane || 'CORE'}`;
+  if (el.drawerBranch) el.drawerBranch.textContent = entity.defaultBranch || 'main';
+  if (el.drawerHeadSha) el.drawerHeadSha.textContent = entity.headSha || '7a89abb';
+
+  // Blast list
+  if (el.drawerBlastList) {
+    el.drawerBlastList.innerHTML = `
+      <div class="blast-item">
+        <strong>Trust Gateway Contract Binding:</strong>
+        <code>SPEC-001-VERIFIED (Fail-Closed Egress)</code>
+      </div>
+      <div class="blast-item">
+        <strong>Downstream Dependents:</strong>
+        <span>works-execution, sentinel, forge-worker</span>
+      </div>
+    `;
+  }
+
+  // Leases list
+  if (el.drawerLeasesList) {
+    el.drawerLeasesList.innerHTML = `
+      <div class="blast-item">
+        <strong>Active Lease:</strong> <code>lease_forge_992</code>
+        <span>Worker: forge &bull; Host: vds-eu-central-01 &bull; 12m remaining</span>
+      </div>
+    `;
+  }
+
+  el.detailDrawer.classList.add('open');
+  el.detailDrawer.setAttribute('aria-hidden', 'false');
+}
+
+function closeEntityDetail() {
+  if (!el.detailDrawer) return;
+  el.detailDrawer.classList.remove('open');
+  el.detailDrawer.setAttribute('aria-hidden', 'true');
+  state.selectedEntity = null;
+}
+
+/* ==========================================================================
+   DOCKED CYBER EVENT TERMINAL
+   ========================================================================== */
+function initCyberTerminal() {
+  if (!el.cyberTerminal) return;
+
+  // Initial stream seed logs
+  const seeds = [
+    { tag: 'auth', msg: 'Trust Gateway validated admission ticket tg_tick_819 for agent forge' },
+    { tag: 'telemetry', msg: 'Jonas Lenovo Yoga local bridge synchronized (22% CPU, 48% RAM)' },
+    { tag: 'telemetry', msg: 'Hetzner VDS Cloud EU-Central-01 6 docker slices online (18ms latency)' },
+    { tag: 'hazard', msg: 'Weibull hazard prediction: lease_codex_412 completion expected in 4.2m' },
+    { tag: 'fleet', msg: 'Sentinel pre-merge radar verified commit 7a89abb with 26 safety benchmarks' },
+    { tag: 'auth', msg: 'Cryptographic SHA-256 HashChain verified Block #50 seal intact' }
+  ];
+
+  seeds.forEach(s => addTerminalLog(s.tag, s.msg));
+
+  // Toggle Collapse
+  el.btnToggleTerminal?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    el.cyberTerminal.classList.toggle('collapsed');
+    el.btnToggleTerminal.textContent = el.cyberTerminal.classList.contains('collapsed') ? '▲' : '▼';
+  });
+
+  el.terminalBar?.addEventListener('click', () => {
+    el.cyberTerminal.classList.toggle('collapsed');
+    if (el.btnToggleTerminal) {
+      el.btnToggleTerminal.textContent = el.cyberTerminal.classList.contains('collapsed') ? '▲' : '▼';
+    }
+  });
+
+  // Clear
+  el.btnClearTerminal?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    state.terminalLogs = [];
+    renderTerminalLogs();
+  });
+
+  // Pause
+  el.btnPauseTerminal?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    state.terminalPaused = !state.terminalPaused;
+    el.btnPauseTerminal.textContent = state.terminalPaused ? '▶' : '⏸';
+    showToast(state.terminalPaused ? 'Terminal paused' : 'Terminal streaming', 'info');
+  });
+
+  // Filters
+  const filterBtns = document.querySelectorAll('.terminal-filter');
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.terminalFilter = btn.dataset.filter;
+      renderTerminalLogs();
+    });
+  });
+}
+
+function addTerminalLog(tag, msg) {
+  if (state.terminalPaused) return;
+
+  const now = new Date();
+  const timeStr = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0');
+
+  state.terminalLogs.push({ time: timeStr, tag, msg });
+  if (state.terminalLogs.length > 100) state.terminalLogs.shift();
+
+  if (el.terminalEventCount) {
+    el.terminalEventCount.textContent = `${state.terminalLogs.length} events`;
+  }
+
+  renderTerminalLogs();
+}
+
+function renderTerminalLogs() {
+  if (!el.terminalLogs) return;
+
+  const filter = state.terminalFilter || 'all';
+  const filtered = filter === 'all' 
+    ? state.terminalLogs 
+    : state.terminalLogs.filter(l => l.tag === filter);
+
+  el.terminalLogs.innerHTML = filtered.map(l => `
+    <div class="terminal-line">
+      <span class="terminal-line-time">${l.time}</span>
+      <span class="terminal-tag tag-${l.tag}">[${l.tag.toUpperCase()}]</span>
+      <span class="terminal-line-msg">${l.msg}</span>
+    </div>
+  `).join('');
+
+  el.terminalLogs.scrollTop = el.terminalLogs.scrollHeight;
+}
+
+/* ==========================================================================
+   WEB AUDIO SYNTHESIZER (CYBER AUDIO FX)
+   ========================================================================== */
+let audioCtx = null;
+
+function initAudioSynthesizer() {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) {
+      audioCtx = new AudioContextClass();
+    }
+  } catch (e) {}
+
+  if (el.audioToggle) {
+    el.audioToggle.checked = state.audioEnabled;
+    el.audioToggle.addEventListener('change', (e) => {
+      state.audioEnabled = e.target.checked;
+    });
+  }
+}
+
+function playCyberChime() {
+  if (!state.audioEnabled || !audioCtx) return;
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, now);
+    osc.frequency.exponentialRampToValueAtTime(1320, now + 0.12);
+
+    gain.gain.setValueAtTime(0.04, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+    osc.start(now);
+    osc.stop(now + 0.18);
+  } catch (e) {}
+}
+
+function playRadarPing() {
+  if (!state.audioEnabled || !audioCtx) return;
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, now); // D5
+
+    gain.gain.setValueAtTime(0.02, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+
+    osc.start(now);
+    osc.stop(now + 0.14);
+  } catch (e) {}
+}
+
+function playHazardTone() {
+  if (!state.audioEnabled || !audioCtx) return;
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(220, now);
+    osc.frequency.setValueAtTime(180, now + 0.08);
+
+    gain.gain.setValueAtTime(0.05, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+    osc.start(now);
+    osc.stop(now + 0.22);
+  } catch (e) {}
+}
+
 // Start on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', init);
+

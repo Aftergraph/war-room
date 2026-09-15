@@ -250,6 +250,10 @@
             <p class="form-hint">Ground truth across code, production deployments, and verifiable architecture planes.</p>
           </div>
           <div class="viewport-actions">
+            <div class="view-mode-toggle">
+              <button class="btn btn-sm btn-view-toggle active" id="btnViewGraph">🌐 Interactive Topology Mesh</button>
+              <button class="btn btn-sm btn-view-toggle" id="btnViewGrid">▦ 30-Repo Grid</button>
+            </div>
             <input type="text" class="text-input" id="repoFilterInput" placeholder="Filter 30 repos...">
             <span class="badge badge-pulse">28 Canonical + 2 Temporary Fixtures</span>
           </div>
@@ -274,8 +278,27 @@
           </div>
         </div>
 
+        <!-- Interactive System Reality Topology Mesh Canvas -->
+        <div class="reality-mesh-card" id="realityMeshContainer">
+          <div class="mesh-toolbar">
+            <div>
+              <span class="badge" style="color:var(--accent-cyan); background:rgba(6,182,212,0.12); border-color:var(--accent-cyan);">7 ARCHITECTURE PLANES MESH</span>
+              <span class="metric-meta" style="margin-left:0.5rem;">Click any node to open Deep Contract & Sentinel Inspector &bull; Hover to highlight dependency vectors</span>
+            </div>
+            <div class="mesh-legend">
+              <span class="plane-legend-dot" style="background:var(--plane-auth);"></span> Governance
+              <span class="plane-legend-dot" style="background:var(--plane-exec);"></span> Execution
+              <span class="plane-legend-dot" style="background:var(--plane-cap);"></span> Agents
+              <span class="plane-legend-dot" style="background:var(--plane-exp);"></span> Experience
+            </div>
+          </div>
+          <div class="reality-canvas-wrapper">
+            <canvas id="realityGraphCanvas" width="1400" height="400" class="reality-canvas"></canvas>
+          </div>
+        </div>
+
         <!-- Dynamic 30-Repo Grid -->
-        <div class="topology-grid" id="fullRepoGrid">
+        <div class="topology-grid" id="fullRepoGrid" style="display:none;">
           <!-- Populated by app.js -->
         </div>
       </div>
@@ -369,29 +392,86 @@
           </div>
         </div>
 
-        <!-- Agent Collision Radar Alert Box -->
-        <div class="collision-radar-box" id="collisionRadarBox">
-          <div style="display:flex; align-items:center; gap:0.6rem;">
-            <span class="telemetry-dot dot-online"></span>
-            <strong>Agent Collision & Contention Radar:</strong>
-            <span id="collisionRadarMsg">No branch or contract collisions detected between active bots.</span>
+        <!-- Radar Sweep PPI Display & Collision Radar -->
+        <div class="radar-hud-card">
+          <div class="radar-hud-header">
+            <div class="radar-title-box">
+              <div class="radar-blip-pulse"></div>
+              <div>
+                <h3>📡 Multi-Dimensional Agent Collision & Contention Radar</h3>
+                <p class="form-hint">360° PPI sweep monitoring branch, file-lock, lease, and schema overlaps across active bots.</p>
+              </div>
+            </div>
+            <div class="radar-controls">
+              <button class="btn btn-sm btn-secondary" id="btnSimulateCollision">⚡ Simulate Contention</button>
+              <button class="btn btn-sm btn-secondary" id="btnResetCollision">✓ Clear Vectors</button>
+              <span class="badge" id="collisionBadge" style="color:var(--accent-emerald);">Collision Radar: Clean</span>
+            </div>
+          </div>
+
+          <div class="radar-grid-layout">
+            <div class="radar-canvas-container">
+              <canvas id="radarSweepCanvas" width="460" height="460" class="radar-canvas"></canvas>
+              <div class="radar-azimuth radar-az-0">000° N</div>
+              <div class="radar-azimuth radar-az-90">090° E</div>
+              <div class="radar-azimuth radar-az-180">180° S</div>
+              <div class="radar-azimuth radar-az-270">270° W</div>
+              <div class="radar-range-label ring-25">25%</div>
+              <div class="radar-range-label ring-50">50%</div>
+              <div class="radar-range-label ring-75">75%</div>
+              <div class="radar-range-label ring-100">100% LEASE</div>
+            </div>
+
+            <div class="radar-targets-panel">
+              <h4>🎯 Tracked Fleet Targets & Hazard Proximity</h4>
+              <div class="radar-targets-list" id="radarTargetsList">
+                <!-- Dynamically populated target blips -->
+              </div>
+              <div class="collision-radar-box" id="collisionRadarBox" style="margin-top:0.75rem;">
+                <div style="display:flex; align-items:center; gap:0.6rem;">
+                  <span class="telemetry-dot dot-online"></span>
+                  <strong>Vector Status:</strong>
+                  <span id="collisionRadarMsg">No branch or contract collisions detected between active bots.</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Hardware & Cloud Telemetry Bridges -->
+        <!-- Hardware & Cloud Telemetry Bridges with Circular HUD Gauges -->
         <div class="telemetry-bridges-grid" style="margin-top:1.25rem;">
           <div class="telemetry-bridge-card">
             <div class="bridge-header">
               <h3>💻 Jonas Lenovo Yoga (Local Operator Bridge)</h3>
               <span class="badge" style="color:var(--accent-emerald);">Bridge Active</span>
             </div>
+            <div class="bridge-gauges-row">
+              <div class="hud-circle-gauge">
+                <svg viewBox="0 0 100 100" class="gauge-svg">
+                  <circle class="gauge-bg" cx="50" cy="50" r="40"></circle>
+                  <circle class="gauge-bar gauge-cyan" id="lenovoCpuCircle" cx="50" cy="50" r="40" stroke-dasharray="251.2" stroke-dashoffset="195"></circle>
+                </svg>
+                <div class="gauge-text"><span id="lenovoCpuVal">22%</span><small>CPU</small></div>
+              </div>
+              <div class="hud-circle-gauge">
+                <svg viewBox="0 0 100 100" class="gauge-svg">
+                  <circle class="gauge-bg" cx="50" cy="50" r="40"></circle>
+                  <circle class="gauge-bar gauge-purple" id="lenovoRamCircle" cx="50" cy="50" r="40" stroke-dasharray="251.2" stroke-dashoffset="130"></circle>
+                </svg>
+                <div class="gauge-text"><span id="lenovoRamVal">48%</span><small>RAM</small></div>
+              </div>
+              <div class="hud-circle-gauge">
+                <svg viewBox="0 0 100 100" class="gauge-svg">
+                  <circle class="gauge-bg" cx="50" cy="50" r="40"></circle>
+                  <circle class="gauge-bar gauge-emerald" id="lenovoBatteryCircle" cx="50" cy="50" r="40" stroke-dasharray="251.2" stroke-dashoffset="15"></circle>
+                </svg>
+                <div class="gauge-text"><span id="lenovoBatteryVal">94%</span><small>BATTERY</small></div>
+              </div>
+            </div>
             <div class="bridge-specs">
               <div><span>Host:</span> Jonas-Lenovo-Yoga (Windows 11 Pro)</div>
-              <div><span>Vantage API:</span> <strong style="color:var(--accent-cyan);">Connected &bull; Intelligent Cooling</strong></div>
-              <div><span>Battery:</span> 94% &bull; AC Connected</div>
-              <div><span>CPU:</span> 22% &bull; 8 Cores</div>
-              <div><span>RAM:</span> 15.4 GB / 32.0 GB (48%)</div>
-              <div><span>Local Worker Slices:</span> 3 Agent sessions active</div>
+              <div><span>Vantage API:</span> <strong style="color:var(--accent-cyan);">Intelligent Cooling Mode</strong></div>
+              <div><span>Worker Slices:</span> 3 Agent sessions active</div>
             </div>
           </div>
 
@@ -400,12 +480,32 @@
               <h3>☁️ Hetzner VDS Cloud Compute Bridge</h3>
               <span class="badge" style="color:var(--accent-emerald);">Online (18ms)</span>
             </div>
+            <div class="bridge-gauges-row">
+              <div class="hud-circle-gauge">
+                <svg viewBox="0 0 100 100" class="gauge-svg">
+                  <circle class="gauge-bg" cx="50" cy="50" r="40"></circle>
+                  <circle class="gauge-bar gauge-cyan" id="vdsCpuCircle" cx="50" cy="50" r="40" stroke-dasharray="251.2" stroke-dashoffset="173"></circle>
+                </svg>
+                <div class="gauge-text"><span id="vdsCpuVal">31%</span><small>CPU</small></div>
+              </div>
+              <div class="hud-circle-gauge">
+                <svg viewBox="0 0 100 100" class="gauge-svg">
+                  <circle class="gauge-bg" cx="50" cy="50" r="40"></circle>
+                  <circle class="gauge-bar gauge-blue" id="vdsRamCircle" cx="50" cy="50" r="40" stroke-dasharray="251.2" stroke-dashoffset="145"></circle>
+                </svg>
+                <div class="gauge-text"><span id="vdsRamVal">42%</span><small>RAM</small></div>
+              </div>
+              <div class="hud-circle-gauge">
+                <svg viewBox="0 0 100 100" class="gauge-svg">
+                  <circle class="gauge-bg" cx="50" cy="50" r="40"></circle>
+                  <circle class="gauge-bar gauge-emerald" id="vdsContainerCircle" cx="50" cy="50" r="40" stroke-dasharray="251.2" stroke-dashoffset="62"></circle>
+                </svg>
+                <div class="gauge-text"><span>6/8</span><small>DOCKER</small></div>
+              </div>
+            </div>
             <div class="bridge-specs">
               <div><span>Node:</span> vds-eu-central-01 (159.69.192.88)</div>
-              <div><span>Containers:</span> <strong style="color:var(--accent-cyan);">6 Docker Slices Running</strong></div>
               <div><span>Forge Workers:</span> 2 Active Leases</div>
-              <div><span>Cron Fabric:</span> 99.98% SLO Uptime</div>
-              <div><span>CPU:</span> 31% &bull; RAM: 42%</div>
               <div><span>Tamper Audit:</span> Syncing to Trust Gateway</div>
             </div>
           </div>
@@ -415,12 +515,13 @@
               <h3>📱 Telegram Bot Command Center</h3>
               <span class="badge" style="color:var(--accent-purple);">Fabric v0.10</span>
             </div>
-            <div class="bridge-specs">
-              <div><span>Bot Handler:</span> @AftergraphWatchdogBot</div>
+            <div class="bridge-specs" style="margin-top:0.75rem;">
+              <div><span>Bot Handler:</span> <strong style="color:var(--accent-purple);">@AftergraphWatchdogBot</strong></div>
               <div><span>Sensors:</span> Enforced Read-Only Sensors Active</div>
               <div><span>Drift Monitors:</span> Telegram-first Push Notifications</div>
               <div><span>Event Dedupe:</span> 100% active (Zero spam)</div>
-              <div><span>Last Ping:</span> Moments ago</div>
+              <div><span>Commands:</span> <code>/status</code>, <code>/radar</code>, <code>/verify</code>, <code>/quarantine</code></div>
+              <div><span>Last Ping:</span> <span id="telegramLastPing">Synchronized (0s ago)</span></div>
             </div>
           </div>
         </div>
@@ -485,11 +586,19 @@
           </div>
         </div>
 
-        <!-- Audit Time Machine Slider -->
+        <!-- Audit Time Machine with Playback Controls -->
         <div class="time-machine-card">
           <div class="time-machine-header">
-            <h3>⏳ Audit Time Machine (Historical Snapshot Scrubbing)</h3>
-            <span class="metric-meta" id="timeMachineLabel">Showing: Current Remote HEAD (100% Live)</span>
+            <div>
+              <h3>⏳ Audit Time Machine (Historical Snapshot Scrubbing)</h3>
+              <span class="metric-meta" id="timeMachineLabel">Showing: Current Remote HEAD (100% Live)</span>
+            </div>
+            <div class="time-machine-controls">
+              <button class="btn btn-sm btn-secondary" id="btnTimeMachineStepBack" title="Step Back 1 Hour">&larr; -1h</button>
+              <button class="btn btn-sm btn-primary" id="btnTimeMachinePlay" title="Play Historical Timeline Animation">&#9654; Play Timeline</button>
+              <button class="btn btn-sm btn-secondary" id="btnTimeMachineStepForward" title="Step Forward 1 Hour">+1h &rarr;</button>
+              <button class="btn btn-sm btn-secondary" id="btnTimeMachineLive" title="Jump to Current Live HEAD">Live HEAD</button>
+            </div>
           </div>
           <input type="range" class="time-slider" id="timeMachineSlider" min="0" max="100" value="100">
           <div class="time-machine-ticks">
@@ -639,6 +748,93 @@
         <div class="modal-footer">
           <button class="btn btn-secondary" id="btnTestToken">Test Token</button>
           <button class="btn btn-primary" id="btnSaveSettings">Save & Apply</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. DEEP ENTITY DETAIL DRAWER -->
+    <aside class="detail-drawer" id="detailDrawer" aria-hidden="true">
+      <div class="drawer-header">
+        <div class="drawer-title-group">
+          <span class="badge" id="drawerPlaneBadge">PLANE: CORE</span>
+          <h3 id="drawerEntityTitle">repo-name</h3>
+          <span class="drawer-sub" id="drawerEntitySub">Epistemic Status: GOVERNED</span>
+        </div>
+        <button class="btn-icon" id="btnCloseDrawer" title="Close Drawer (ESC)">&times;</button>
+      </div>
+
+      <div class="drawer-body">
+        <!-- Section: Remote HEAD & Governance -->
+        <div class="drawer-section">
+          <h4>📌 Canonical Source & Remote HEAD</h4>
+          <div class="drawer-info-grid">
+            <div><span class="lbl">Default Branch:</span> <strong id="drawerBranch">main</strong></div>
+            <div><span class="lbl">Remote HEAD:</span> <code id="drawerHeadSha">7a89abb</code></div>
+            <div><span class="lbl">Commit Message:</span> <span id="drawerHeadMsg">feat: production convergence</span></div>
+            <div><span class="lbl">Last Verified:</span> <span id="drawerLastVerified">Moments ago</span></div>
+          </div>
+        </div>
+
+        <!-- Section: Sentinel Benchmark Status -->
+        <div class="drawer-section">
+          <h4>🛡️ Sentinel Safety & Gate Status</h4>
+          <div class="sentinel-drawer-box" id="drawerSentinelBox">
+            <div class="sentinel-drawer-status">
+              <span class="telemetry-dot dot-online"></span>
+              <strong id="drawerSentinelVerdict">SPEC-001 Pass · 26 Benchmarks Clean</strong>
+            </div>
+            <p class="form-hint" id="drawerSentinelDetail">Zero raw SQL mutations, zero secret leaks, SHA-256 tamper seal intact.</p>
+          </div>
+        </div>
+
+        <!-- Section: Downstream Blast Radius & Contracts -->
+        <div class="drawer-section">
+          <h4>🌐 Dependency & Blast-Radius Coupling</h4>
+          <div class="drawer-blast-list" id="drawerBlastList">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Section: Active Leases & Executing Bots -->
+        <div class="drawer-section">
+          <h4>⚡ Active Bot Leases & Intent</h4>
+          <div class="drawer-leases-list" id="drawerLeasesList">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <div class="drawer-footer">
+        <button class="btn btn-secondary" id="btnDrawerCapsule">📋 Export ACC Capsule</button>
+        <button class="btn btn-primary" id="btnDrawerSentinelVerify">🛡️ Run Sentinel Audit</button>
+      </div>
+    </aside>
+
+    <!-- 9. DOCKED CYBER EVENT TERMINAL -->
+    <div class="cyber-terminal" id="cyberTerminal">
+      <div class="terminal-bar" id="terminalBar">
+        <div class="terminal-left">
+          <div class="terminal-status-dot"></div>
+          <span class="terminal-title">REALTIME EVENT & TELEMETRY STREAM</span>
+          <span class="terminal-count" id="terminalEventCount">24 events</span>
+        </div>
+        <div class="terminal-filters">
+          <button class="terminal-filter active" data-filter="all">ALL</button>
+          <button class="terminal-filter" data-filter="auth">AUTH (TG)</button>
+          <button class="terminal-filter" data-filter="fleet">FLEET</button>
+          <button class="terminal-filter" data-filter="hazard">HAZARD</button>
+          <button class="terminal-filter" data-filter="telemetry">HARDWARE</button>
+        </div>
+        <div class="terminal-actions">
+          <button class="btn-term-icon" id="btnPauseTerminal" title="Pause Stream">⏸</button>
+          <button class="btn-term-icon" id="btnClearTerminal" title="Clear Stream">⌫</button>
+          <button class="btn-term-icon" id="btnToggleTerminal" title="Collapse / Expand Terminal">▼</button>
+        </div>
+      </div>
+      <div class="terminal-body" id="terminalBody">
+        <div class="terminal-scanline"></div>
+        <div class="terminal-logs" id="terminalLogs">
+          <!-- Populated in realtime -->
         </div>
       </div>
     </div>
