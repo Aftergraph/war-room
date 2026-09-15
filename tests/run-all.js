@@ -145,21 +145,26 @@ async function runAllTests() {
 
   // --- 3. DYNAMIC 30-REPO DISCOVERY & GOVERNANCE ---
   console.log('\n--- 3. Dynamic 30-Repository Governance ---');
-  test('GitHub adapter classifies 30 repos into governed vs temporary fixtures', () => {
+  test('GitHub adapter classifies the canonical 29 repos against platform-topology/2.0', () => {
     const adapter = new GitHubAdapter();
-    const mock30 = [
-      'aftergraph', 'docs', 'brand', 'contracts', 'governance', 'sentinel',
-      'trust-gateway', 'works-execution', 'aie', 'afm', 'model-registry',
-      'continuity', 'runtime', 'telemetry', 'integrations', 'studio',
-      'forge', 'hermes', 'atlas', 'sentinel-bench', 'polyrepo-tools',
-      'agent-sdk', 'operator-cockpit', 'mcp-aftergraph', 'evidence-store',
-      'cron-fabric', 'vds-daemon', 'lenovo-bridge', 'sentinel-firetest1', 'sentinel-firetest2'
+    const mock29 = [
+      'after-graph-governance', 'aie', 'trust-gateway', 'runtime',
+      'works-execution', 'relay', 'studio', 'wi-backend', 'wi-frontend',
+      'context-continuity', 'continuum', 'sentinel', 'sentinel-firetest',
+      'sentinel-firetest2', 'intelligence-systems-research', 'skills-vault',
+      'llm-research-development', 'afm', 'model-registry',
+      'autonomous-venture-company', 'aftergraph-cron-fabric', 'veranza',
+      'docs', 'aftergraph.org', 'brand', '.github', 'skill-abi', 'skillport',
+      'business-ops'
     ];
-
-    const result = adapter.classifyGovernance(mock30);
-    assert.strictEqual(result.totalObserved, 30);
-    assert.strictEqual(result.governedCount, 28);
+    const result = adapter.classifyGovernance(mock29);
+    assert.strictEqual(result.totalObserved, 29);
+    assert.strictEqual(result.governedCount, 27);
     assert.strictEqual(result.unregisteredCount, 2);
+    const fixtures = result.classified.filter(c => c.status === 'TEMPORARY_FIXTURE');
+    assert.strictEqual(fixtures.length, 2, 'expected 2 temporary fixtures from topology');
+    assert.ok(fixtures.every(f => f.name.startsWith('sentinel-firetest')),
+      'temporary fixtures should be the firetest repos');
   });
 
   // --- 4. COMPUTE NODE BRIDGES & CAPABILITY-SCOPED COMMANDS ---
@@ -313,30 +318,27 @@ async function runAllTests() {
 
     projector.verifications.set('verif_001', {
       id: 'verif_001',
-      repoName: 'aftergraph',
+      repoName: 'studio',
       exactHeadSha: initialHeadSha,
       status: 'VERIFIED',
       epistemicStatus: EPISTEMIC_STATUS.VERIFIED
     });
-
+    const studioRepo = projector.repositories.get('studio');
+    studioRepo.headSha = initialHeadSha;
     assert.strictEqual(projector.verifications.get('verif_001').status, 'VERIFIED');
-
     const commitEnv = createObservationEnvelope({
       source: { system: 'github', adapter: 'gh-observer' },
-      subject: { type: 'Repository', id: 'aftergraph' },
+      subject: { type: 'Repository', id: 'studio' },
       event: { type: 'push.commit' },
       provenance: { commitSha: newHeadSha },
       payload: { head: newHeadSha }
     });
-
     projector.applyObservation(commitEnv);
-
     const updatedVerif = projector.verifications.get('verif_001');
     assert.strictEqual(updatedVerif.status, 'STALE');
     assert.strictEqual(updatedVerif.epistemicStatus, EPISTEMIC_STATUS.STALE);
     assert.ok(updatedVerif.invalidationReason.includes('HEAD advanced'));
-
-    const attentionItem = projector.attentionQueue.find(a => a.repo === 'aftergraph');
+    const attentionItem = projector.attentionQueue.find(a => a.repo === 'studio');
     assert.ok(attentionItem);
     assert.strictEqual(attentionItem.actionRequired, 'RERUN_SENTINEL');
   });

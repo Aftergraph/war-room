@@ -7,6 +7,7 @@ const https = require('https');
 const { BaseWarRoomAdapter } = require('../../../packages/adapters/src/base');
 const { createObservationEnvelope } = require('../../../packages/contracts/src/observation');
 const { EPISTEMIC_STATUS } = require('../../../packages/domain/src/entities');
+const topology = require('../../../packages/contracts/src/topology');
 
 class GitHubAdapter extends BaseWarRoomAdapter {
   constructor(options = {}) {
@@ -32,6 +33,7 @@ class GitHubAdapter extends BaseWarRoomAdapter {
       if (this.seedData && this.seedData.repos) {
         this.cachedRepos = this.seedData.repos;
         this.status = 'FALLBACK_SEED';
+        this.cachedRepos.forEach(r => r.epistemicStatus = EPISTEMIC_STATUS.OBSERVED);
         return this.cachedRepos;
       }
       throw err;
@@ -39,48 +41,39 @@ class GitHubAdapter extends BaseWarRoomAdapter {
   }
 
   /**
-   * Compares discovered repositories against governance register
+   * Compares discovered repositories against the canonical platform topology
+   * (Aftergraph/after-graph-governance docs/platform-topology/2.0.json), loaded
+   * via packages/contracts/src/topology. Never hand-maintain a parallel list.
    */
   classifyGovernance(observedRepos = []) {
-    const governedManifest = [
-      'aftergraph', 'docs', 'brand', 'contracts', 'governance', 'sentinel',
-      'trust-gateway', 'works-execution', 'aie', 'afm', 'model-registry',
-      'continuity', 'runtime', 'telemetry', 'integrations', 'studio',
-      'forge', 'hermes', 'atlas', 'sentinel-bench', 'polyrepo-tools',
-      'agent-sdk', 'operator-cockpit', 'mcp-aftergraph', 'evidence-store',
-      'cron-fabric', 'vds-daemon', 'lenovo-bridge'
-    ];
-
     let governedCount = 0;
     let unregisteredCount = 0;
+    let temporaryCount = 0;
     const classified = [];
-
     for (const r of observedRepos) {
       const name = typeof r === 'string' ? r : r.name;
-      const isGoverned = governedManifest.includes(name);
-      const isFixture = name.includes('firetest') || name.includes('test');
-      
-      let status = 'UNREGISTERED';
-      if (isGoverned) {
-        status = 'GOVERNED';
+      const status = topology.classifyStatus(name);
+      const entry = topology.lookup(name);
+      if (status === 'GOVERNED') {
         governedCount++;
-      } else if (isFixture) {
-        status = 'TEMPORARY_FIXTURE';
-        unregisteredCount++;
+      } else if (status === 'TEMPORARY_FIXTURE') {
+        temporaryCount++;
       } else {
         unregisteredCount++;
       }
-
       classified.push({
         name,
         status,
+        plane: entry ? topology.planeFor(name) : null,
+        role: entry ? entry.role : null,
+        lifecycle: entry ? entry.lifecycle : null,
         epistemicStatus: EPISTEMIC_STATUS.OBSERVED
       });
     }
-
     return {
       totalObserved: observedRepos.length,
       governedCount,
+      temporaryCount,
       unregisteredCount,
       staleCount: 0,
       classified
@@ -93,11 +86,10 @@ class GitHubAdapter extends BaseWarRoomAdapter {
   async snapshot() {
     const repos = await this.discover();
     const envelopes = [];
-
     for (const repo of repos) {
       const repoName = typeof repo === 'string' ? repo : repo.name;
       const headSha = (typeof repo === 'object' && repo.headSha) ? repo.headSha : '7a89abb';
-
+      const topoEntry = topology.lookup(repoName);
       envelopes.push(createObservationEnvelope({
         source: {
           system: 'github',
@@ -119,12 +111,17 @@ class GitHubAdapter extends BaseWarRoomAdapter {
         },
         payload: {
           repoName,
-          defaultBranch: 'main',
-          headSha
+          defaultBranch: topoEntry ? topoEntry.canonicalBranch : 'main',
+          headSha,
+          topology: topoEntry ? {
+            status: topology.classifyStatus(repoName),
+            plane: topology.planeFor(repoName),
+            role: topoEntry.role,
+            lifecycle: topoEntry.lifecycle
+          } : null
         }
       }));
     }
-
     return envelopes;
   }
 
@@ -138,7 +135,6 @@ class GitHubAdapter extends BaseWarRoomAdapter {
       if (this.token) {
         headers['Authorization'] = `token ${this.token}`;
       }
-
       const req = https.get(url, { headers, timeout: 5000 }, res => {
         let body = '';
         res.on('data', chunk => { body += chunk; });
@@ -159,7 +155,6 @@ class GitHubAdapter extends BaseWarRoomAdapter {
           }
         });
       });
-
       req.on('error', err => reject(err));
       req.on('timeout', () => { req.destroy(); reject(new Error('GitHub request timeout')); });
     });
