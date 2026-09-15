@@ -1,0 +1,8 @@
+{
+  "$schema": "./2.0.schema.json",
+  "schema_version": "platform-topology/2.0",
+  "organization": "Aftergraph",
+  "evidence_cut": "2026-09-10",
+  "description": "Human-governed repository topology for the Aftergraph polyrepo platform.",
+  "repositories": []
+}
