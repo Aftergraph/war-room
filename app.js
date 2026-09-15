@@ -1695,6 +1695,14 @@ function openEntityDetail(entity) {
     `;
   }
 
+  // Update GitHub link
+  const btnGithub = document.getElementById('btnDrawerGithub');
+  if (btnGithub) {
+    const slug = entity.name || entity.id || '';
+    btnGithub.href = `https://github.com/Aftergraph/${slug}`;
+    btnGithub.title = `View https://github.com/Aftergraph/${slug} on GitHub`;
+  }
+
   el.detailDrawer.classList.add('open');
   el.detailDrawer.setAttribute('aria-hidden', 'false');
 }

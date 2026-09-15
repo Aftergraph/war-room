@@ -50,7 +50,7 @@
 
         <!-- Global Navigation Controls -->
         <div class="header-controls">
-          <button class="btn btn-cmd-palette" id="btnOpenCmdPalette" title="Open Command Palette (Ctrl+K / Cmd+K)">
+          <button class="btn btn-cmd-palette" id="btnOpenCmdPalette" title="Open Command Palette (Ctrl+K / Cmd+K)" aria-label="Open Command Palette">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -65,14 +65,14 @@
             <span class="pulse-timer" id="pollCountdown">30s</span>
           </div>
 
-          <button class="btn btn-secondary" id="btnRefresh" title="Force Refresh">
+          <button class="btn btn-secondary" id="btnRefresh" title="Force Refresh" aria-label="Force Refresh and Synchronize Data">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/>
             </svg>
             Sync
           </button>
 
-          <button class="btn btn-icon" id="btnSettings" title="Configuration & PAT">
+          <button class="btn btn-icon" id="btnSettings" title="Configuration & PAT" aria-label="War Room Configuration and Settings">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="3"></circle>
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -250,11 +250,11 @@
             <p class="form-hint">Ground truth across code, production deployments, and verifiable architecture planes.</p>
           </div>
           <div class="viewport-actions">
-            <div class="view-mode-toggle">
-              <button class="btn btn-sm btn-view-toggle active" id="btnViewGraph">🌐 Interactive Topology Mesh</button>
-              <button class="btn btn-sm btn-view-toggle" id="btnViewGrid">▦ 30-Repo Grid</button>
+            <div class="view-mode-toggle" role="group" aria-label="Topology View Mode">
+              <button class="btn btn-sm btn-view-toggle active" id="btnViewGraph" aria-label="Switch to Interactive Topology Mesh View">🌐 Interactive Topology Mesh</button>
+              <button class="btn btn-sm btn-view-toggle" id="btnViewGrid" aria-label="Switch to 30-Repo Grid View">▦ 30-Repo Grid</button>
             </div>
-            <input type="text" class="text-input" id="repoFilterInput" placeholder="Filter 30 repos...">
+            <input type="text" class="text-input" id="repoFilterInput" placeholder="Filter 30 repos..." aria-label="Filter Governed Repositories">
             <span class="badge badge-pulse">28 Canonical + 2 Temporary Fixtures</span>
           </div>
         </div>
@@ -593,14 +593,14 @@
               <h3>⏳ Audit Time Machine (Historical Snapshot Scrubbing)</h3>
               <span class="metric-meta" id="timeMachineLabel">Showing: Current Remote HEAD (100% Live)</span>
             </div>
-            <div class="time-machine-controls">
-              <button class="btn btn-sm btn-secondary" id="btnTimeMachineStepBack" title="Step Back 1 Hour">&larr; -1h</button>
-              <button class="btn btn-sm btn-primary" id="btnTimeMachinePlay" title="Play Historical Timeline Animation">&#9654; Play Timeline</button>
-              <button class="btn btn-sm btn-secondary" id="btnTimeMachineStepForward" title="Step Forward 1 Hour">+1h &rarr;</button>
-              <button class="btn btn-sm btn-secondary" id="btnTimeMachineLive" title="Jump to Current Live HEAD">Live HEAD</button>
+            <div class="time-machine-controls" role="group" aria-label="Timeline playback controls">
+              <button class="btn btn-sm btn-secondary" id="btnTimeMachineStepBack" title="Step Back 1 Hour" aria-label="Step Back 1 Hour">&larr; -1h</button>
+              <button class="btn btn-sm btn-primary" id="btnTimeMachinePlay" title="Play Historical Timeline Animation" aria-label="Play Historical Timeline Animation">&#9654; Play Timeline</button>
+              <button class="btn btn-sm btn-secondary" id="btnTimeMachineStepForward" title="Step Forward 1 Hour" aria-label="Step Forward 1 Hour">+1h &rarr;</button>
+              <button class="btn btn-sm btn-secondary" id="btnTimeMachineLive" title="Jump to Current Live HEAD" aria-label="Jump to Current Live HEAD">Live HEAD</button>
             </div>
           </div>
-          <input type="range" class="time-slider" id="timeMachineSlider" min="0" max="100" value="100">
+          <input type="range" class="time-slider" id="timeMachineSlider" min="0" max="100" value="100" aria-label="Historical Timeline Scrub Position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
           <div class="time-machine-ticks">
             <span>24h Ago</span>
             <span>12h Ago</span>
@@ -760,7 +760,7 @@
           <h3 id="drawerEntityTitle">repo-name</h3>
           <span class="drawer-sub" id="drawerEntitySub">Epistemic Status: GOVERNED</span>
         </div>
-        <button class="btn-icon" id="btnCloseDrawer" title="Close Drawer (ESC)">&times;</button>
+        <button class="btn-icon" id="btnCloseDrawer" title="Close Drawer (ESC)" aria-label="Close Deep Entity Detail Drawer">&times;</button>
       </div>
 
       <div class="drawer-body">
@@ -805,8 +805,9 @@
       </div>
 
       <div class="drawer-footer">
-        <button class="btn btn-secondary" id="btnDrawerCapsule">📋 Export ACC Capsule</button>
-        <button class="btn btn-primary" id="btnDrawerSentinelVerify">🛡️ Run Sentinel Audit</button>
+        <a class="btn btn-secondary" id="btnDrawerGithub" target="_blank" rel="noopener noreferrer" href="https://github.com/Aftergraph" aria-label="Open Repository on GitHub">🔗 GitHub</a>
+        <button class="btn btn-secondary" id="btnDrawerCapsule" aria-label="Export Agent Continuity Capsule">📋 Export ACC Capsule</button>
+        <button class="btn btn-primary" id="btnDrawerSentinelVerify" aria-label="Run Sentinel Benchmark Audit">🛡️ Run Sentinel Audit</button>
       </div>
     </aside>
 
@@ -818,17 +819,17 @@
           <span class="terminal-title">REALTIME EVENT & TELEMETRY STREAM</span>
           <span class="terminal-count" id="terminalEventCount">24 events</span>
         </div>
-        <div class="terminal-filters">
-          <button class="terminal-filter active" data-filter="all">ALL</button>
-          <button class="terminal-filter" data-filter="auth">AUTH (TG)</button>
-          <button class="terminal-filter" data-filter="fleet">FLEET</button>
-          <button class="terminal-filter" data-filter="hazard">HAZARD</button>
-          <button class="terminal-filter" data-filter="telemetry">HARDWARE</button>
+        <div class="terminal-filters" role="group" aria-label="Terminal event filters">
+          <button class="terminal-filter active" data-filter="all" aria-label="Show all events">ALL</button>
+          <button class="terminal-filter" data-filter="auth" aria-label="Show Trust Gateway auth events">AUTH (TG)</button>
+          <button class="terminal-filter" data-filter="fleet" aria-label="Show Agent Fleet events">FLEET</button>
+          <button class="terminal-filter" data-filter="hazard" aria-label="Show hazard and collision alerts">HAZARD</button>
+          <button class="terminal-filter" data-filter="telemetry" aria-label="Show hardware telemetry events">HARDWARE</button>
         </div>
         <div class="terminal-actions">
-          <button class="btn-term-icon" id="btnPauseTerminal" title="Pause Stream">⏸</button>
-          <button class="btn-term-icon" id="btnClearTerminal" title="Clear Stream">⌫</button>
-          <button class="btn-term-icon" id="btnToggleTerminal" title="Collapse / Expand Terminal">▼</button>
+          <button class="btn-term-icon" id="btnPauseTerminal" title="Pause Stream" aria-label="Pause or Resume Event Log Stream">⏸</button>
+          <button class="btn-term-icon" id="btnClearTerminal" title="Clear Stream" aria-label="Clear Event Log Stream">⌫</button>
+          <button class="btn-term-icon" id="btnToggleTerminal" title="Collapse / Expand Terminal" aria-label="Toggle Collapse or Expand Terminal">▼</button>
         </div>
       </div>
       <div class="terminal-body" id="terminalBody">

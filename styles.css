@@ -17,7 +17,7 @@
   
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-muted: #8ea3bf;
   --text-highlight: #ffffff;
   
   /* Status & Accent Tokens */
@@ -54,6 +54,35 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+/* Accessibility: Visible Focus Indicators (WCAG AA 3:1 minimum) */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-core), 0 0 0 4px var(--accent-cyan) !important;
+}
+
+/* Tabular Numbers for Data Consistency */
+.metric-value,
+.telemetry-val,
+.repo-head-sha,
+.hashchain-hash-str,
+.gauge-text span,
+.radar-azimuth,
+.radar-range-label,
+.terminal-line-time,
+.time-machine-ticks span,
+.pulse-timer {
+  font-variant-numeric: tabular-nums;
+}
+
+button,
+.btn,
+.domain-btn,
+.btn-view-toggle,
+.terminal-filter,
+.btn-term-icon {
+  touch-action: manipulation;
 }
 
 body {
