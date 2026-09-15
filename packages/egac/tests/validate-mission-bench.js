@@ -17,9 +17,25 @@ const {
 
 // ─── Load and parse CSV ──────────────────────────────────────────────────────
 
-const csvPath = path.resolve(
-  'C:/Users/empir/aftergraph-brand-rollout/clones/intelligence-systems-research/data/live_results.csv'
-);
+const csvCandidates = [
+  process.env.MISSION_BENCH_CSV,
+  path.resolve(__dirname, '../../../../github__Aftergraph__intelligence-systems-research/data/live_results.csv'),
+  path.resolve(__dirname, '../../../github__Aftergraph__intelligence-systems-research/data/live_results.csv'),
+  path.resolve(__dirname, '../../intelligence-systems-research/data/live_results.csv'),
+  'C:/Users/empir/aftergraph-brand-rollout/clones/intelligence-systems-research/data/live_results.csv',
+].filter(Boolean);
+
+const csvPath = csvCandidates.find(p => fs.existsSync(p));
+
+if (!csvPath) {
+  console.log('SKIPPED: STUDY-008 live_results.csv not found.');
+  console.log('Set MISSION_BENCH_CSV to its path, or place intelligence-systems-research as a sibling repo.');
+  console.log('Searched:');
+  csvCandidates.forEach(p => console.log('  ' + p));
+  process.exit(0);
+}
+
+console.log(`Using dataset: ${csvPath}\n`);
 
 const csvContent = fs.readFileSync(csvPath, 'utf-8');
 const lines = csvContent.trim().split('\n');
