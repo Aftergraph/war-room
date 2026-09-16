@@ -286,14 +286,13 @@ console.log('Running EGAC model-property suite...\n');
 (function testOnlineCalibration() {
   const egac = new EvidenceGatedAutonomyController();
 
-  // Simulate: true sensitivity = 0.85, record 200 calibration samples
-  // using a simple Bernoulli generator
+  // Deterministic calibration fixture: true sensitivity = 0.85 exactly.
+  // Property tests must never depend on random sampling because that makes the
+  // verification gate probabilistic. 170 detections / 200 samples = 0.85.
   const trueSensitivity = 0.85;
-  let detected = 0;
+  const detected = 170;
   for (let i = 0; i < 200; i++) {
-    const isDetected = Math.random() < trueSensitivity;
-    egac.recordCalibration('tier_4', isDetected);
-    if (isDetected) detected++;
+    egac.recordCalibration('tier_4', i < detected);
   }
 
   const status = egac.calibrationStatus('tier_4');
