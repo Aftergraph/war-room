@@ -6,7 +6,7 @@
 const crypto = require('crypto');
 
 class CredentialBroker {
-  constructor(masterSecret = 'aftergraph_master_seal_2026') {
+  constructor(masterSecret = null) {
     this.masterSecret = masterSecret;
     this.bindings = new Map();
     this.activeTickets = new Map();
@@ -67,26 +67,8 @@ class CredentialBroker {
   /**
    * Issues a short-lived scoped ticket for an agent or adapter
    */
-  requestScopedTicket({ actorId, capability, ttlSeconds = 300 }) {
-    const ticketId = `tkt_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
-    const expiresAt = new Date(Date.now() + ttlSeconds * 1000).toISOString();
-
-    const signature = crypto
-      .createHmac('sha256', this.masterSecret)
-      .update(`${ticketId}:${actorId}:${capability}:${expiresAt}`)
-      .digest('hex');
-
-    const ticket = {
-      ticketId,
-      actorId,
-      capability,
-      expiresAt,
-      decision: 'ALLOW',
-      signature
-    };
-
-    this.activeTickets.set(ticketId, ticket);
-    return ticket;
+  requestScopedTicket() {
+    throw new Error('LOCAL_AUTHORITY_DISABLED: War Room cannot mint Trust Gateway authority');
   }
 
   /**

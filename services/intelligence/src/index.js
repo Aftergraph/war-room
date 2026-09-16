@@ -5,9 +5,9 @@
  * 3. WeibullHazardStallEngine: Time-decay hazard rate prediction for execution leases
  * 4. GlobalAttentionEngine: Multi-factor operational queue prioritization
  * 5. ContextContinuityEngine: Token entropy calculation & ACC Graph Slice generator
- * 6. EvidenceGatedAutonomyController: Provable evidence-gated autonomy (EGAC)
- *    Replaces heuristic risk with empirically grounded sequential Bayesian update
- *    and provable FCR bound. Grounded in VAIE research / MISSION-Bench STUDY-008.
+ * 6. EvidenceGatedAutonomyController: advisory evidence-gated research model (EGAC)
+ *    Uses provisional Bayesian parameters and a miss-rate model for recommendations only;
+ *    it carries no execution authority and STUDY-008 is simulation-dominated.
  */
 
 const {
@@ -348,8 +348,8 @@ class UnifiedIntelligenceEngine {
     this.attention = new GlobalAttentionEngine();
     this.continuity = new ContextContinuityEngine();
     this.egac = new EvidenceGatedAutonomyController({
-      costFalsePositive: 1,
-      costFalseNegative: 19,
+      costFalsePositive: 19,
+      costFalseNegative: 1,
     });
   }
 
@@ -364,8 +364,8 @@ class UnifiedIntelligenceEngine {
   }
 
   /**
-   * EGAC evidence-gated autonomy decision.
-   * Replaces heuristic risk evaluation with provable FCR-bounded decision.
+   * EGAC advisory evidence recommendation.
+   * Produces a non-authoritative model result; canonical execution authority remains external.
    */
   evaluateAutonomy(repoName, evidenceChain, verificationTiers) {
     return this.egac.decide(repoName, evidenceChain, verificationTiers);

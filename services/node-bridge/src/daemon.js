@@ -23,6 +23,7 @@ class NodeBridgeDaemon {
     this.activeJobs = new Map();
     this.isOnline = true;
     this.mockHardware = options.mockHardware || false;
+    this.authorityVerifier = options.authorityVerifier || null;
 
     // Seed mock active jobs
     this.activeJobs.set('job_forge_412', {
@@ -119,15 +120,27 @@ class NodeBridgeDaemon {
       throw new Error(`Capability denied: command '${commandName}' is not in the allowed capability scope`);
     }
 
-    if (!authReceipt || authReceipt.decision !== 'ALLOW') {
-      throw new Error('Trust Gateway authorization receipt required to execute capability on machine node');
+    if (!this.authorityVerifier) {
+      throw new Error('CANONICAL_AUTHORITY_VERIFIER_REQUIRED');
+    }
+    if (!authReceipt) {
+      throw new Error('CANONICAL_AUTHORITY_REQUIRED');
+    }
+    const authorized = await this.authorityVerifier({
+      commandName,
+      params,
+      authority: authReceipt,
+      machineId: this.machineId,
+    });
+    if (authorized !== true) {
+      throw new Error('CANONICAL_AUTHORITY_DENIED');
     }
 
     const receipt = {
       executedAt: new Date().toISOString(),
       machineId: this.machineId,
       command: commandName,
-      authTicket: authReceipt.ticketId
+      authorityRef: authReceipt.reference || null
     };
 
     switch (commandName) {

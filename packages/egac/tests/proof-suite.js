@@ -1,15 +1,15 @@
 /**
- * EGAC Proof Tests — Proves the algorithmic properties claimed in SPECIFICATION.md
+ * EGAC Model-Property Tests — checks algebraic behavior under explicit assumptions
  *
- * Each test is a mathematical proof executed as code:
- * 1. FCR = 0 for tier_2-only evidence (Provable Safety)
+ * Each test checks deterministic properties of the in-code model; none grants operational authority:
+ * 1. Legacy miss-rate product = 0 for configured tier_2 assumptions
  * 2. FCR monotonicity (adding evidence never increases FCR)
  * 3. Evidence tier dominance (higher tier weakly dominates lower)
  * 4. Sequential Bayesian update correctness (odds form)
  * 5. Wilson CI bounds contain true proportion
  * 6. Hoeffding sample complexity is sufficient
  * 7. Autonomy decision respects cost-asymmetry threshold
- * 8. Self-assertion alone never permits autonomous execution
+ * 8. Self-assertion alone never recommends automation from self-assertion
  * 9. Online calibration converges to true sensitivity
  * 10. Plane classification maps correctly
  */
@@ -22,32 +22,33 @@ const {
   EvidenceGatedAutonomyController,
 } = require('../src');
 
-console.log('Running EGAC proof suite...\n');
+console.log('Running EGAC model-property suite...\n');
 
-// ─── 1. FCR = 0 for tier_2-only evidence (Provable Safety) ───────────────────
-(function testFCRProvableZero() {
+// ─── 1. Legacy miss-rate product = 0 for configured tier_2 assumptions ───────────────────
+(function testTier2ModelZero() {
   const egac = new EvidenceGatedAutonomyController();
   const fcr = egac.computeFCRBound(['tier_2', 'tier_2', 'tier_2']);
 
   assert.strictEqual(fcr.bound, 0, 'FCR must be exactly 0 for tier_2-only');
-  assert.strictEqual(fcr.isProvableZero, true, 'isProvableZero must be true');
+  assert.strictEqual(fcr.isProvableZero, false, 'hard-coded tier assumptions must never be labeled a formal proof');
+  assert.strictEqual(fcr.modelAssumptionZero, true, 'the legacy model still computes zero under tier_2 assumptions');
   assert.ok(
     fcr.perTier.every(t => t.cumulativeBound === 0),
     'Every cumulative step must be 0 after first tier_2'
   );
 
-  // Decision: deterministic test pass on governance repo should be AUTONOMOUS
+  // Decision: deterministic test pass on governance repo should recommend automation
   const decision = egac.decide(
     'Aftergraph/trust-gateway',
     [{ tier: 'tier_2', passed: true }],
     ['tier_2']
   );
   assert.strictEqual(
-    decision.decision, 'AUTONOMOUS_EXECUTION',
-    'tier_2 PASS on governance must be AUTONOMOUS (FCR=0 < alpha=0.05, posterior < alpha)'
+    decision.decision, 'RECOMMEND_AUTOMATION',
+    'tier_2 PASS on governance must recommend automation (FCR=0 < alpha=0.05, posterior < alpha)'
   );
 
-  console.log('  PASS: FCR = 0 for tier_2-only evidence (Provable Safety)');
+  console.log('  PASS: tier_2 model miss-rate product = 0 without claiming formal safety');
 })();
 
 // ─── 2. FCR Monotonicity (adding evidence never increases FCR) ───────────────
@@ -195,53 +196,16 @@ console.log('Running EGAC proof suite...\n');
 
 // ─── 7. Autonomy Decision Respects Cost-Asymmetry ────────────────────────────
 (function testAutonomyDecision() {
-  // Default: C_FP=19, C_FN=1 => alpha = 19/20 = 0.95
-  // Wait - that's wrong. alpha = C_FP / (C_FP + C_FN) = 19/20 = 0.95
-  // That means we need P(defect) < 0.95 for autonomous... that's too permissive.
-  // Actually: the false positive is "allowing a defective mission".
-  // C_FP is the cost of that. High C_FP => low alpha => stricter.
-  // alpha = C_FP / (C_FP + C_FN) -- but this gives high alpha for high C_FP.
-  // That's inverted. Let me reconsider.
-
-  // Actually the cost-asymmetry is:
-  // alpha = C_FN / (C_FP + C_FN)
-  // When C_FP >> C_FN, alpha is small => strict (require low P(defect))
-  // When C_FN >> C_FP, alpha is large => permissive
-
-  // The implementation has alpha = C_FP / (C_FP + C_FN).
-  // With C_FP=19, C_FN=1: alpha = 19/20 = 0.95.
-  // That means AUTONOMOUS if P(defect) < 0.95 -- too permissive.
-
-  // Let me check the actual behavior and verify it makes sense.
-  const egac = new EvidenceGatedAutonomyController();
-
-  // With tier_2 evidence passing, FCR=0 and P(defect)≈0
-  // So even with alpha=0.95, this should be AUTONOMOUS
-  const safeDecision = egac.decide(
-    'Aftergraph/docs',
-    [{ tier: 'tier_2', passed: true }],
-    ['tier_2']
-  );
-  assert.strictEqual(safeDecision.decision, 'AUTONOMOUS_EXECUTION');
-
-  // With tier_0 only (self-assertion), FCR=0.90 > alpha=0.95?
-  // No: 0.90 < 0.95, so it would pass the FCR check.
-  // But P(defect) for docs (EXPERIENCE plane) with prior 0.14 and tier_0 PASS:
-  // LR = (1-0.10)/0.95 = 0.947
-  // Posterior odds = (0.14/0.86) * 0.947 = 0.1542
-  // P = 0.1542 / 1.1542 = 0.1336
-  // 0.1336 < 0.95 AND 0.90 < 0.95 => AUTONOMOUS
-  // That's too permissive! Self-assertion should NOT be autonomous.
-
-  // This reveals the alpha formula needs to be C_FN / (C_FP + C_FN)
-  // so that high C_FP gives low alpha (strict).
+  // Cost threshold is alpha = C_FN / (C_FP + C_FN).
+  // With false-positive execution cost 19x larger than false-negative review cost,
+  // alpha = 1/20 = 0.05 and the advisory model is deliberately strict.
 
   // For now, let's test with correct semantics:
-  // If we set C_FP=1, C_FN=19 (favoring caution by making false negative costly to miss)
-  // alpha = 1/20 = 0.05 -- standard significance level
+  // Use C_FP=19, C_FN=1 (false execution is costly)
+  // alpha = 1/20 = 0.05
   const strictEgac = new EvidenceGatedAutonomyController({
-    costFalsePositive: 1,
-    costFalseNegative: 19,
+    costFalsePositive: 19,
+    costFalseNegative: 1,
   });
 
   // tier_0 self-assertion on governance: should HALT
@@ -255,15 +219,15 @@ console.log('Running EGAC proof suite...\n');
     `Self-assertion on governance must HALT with strict alpha: got ${selfAssert.decision}`
   );
 
-  // tier_2 deterministic test on governance: should be AUTONOMOUS
+  // tier_2 deterministic test on governance: should recommend automation
   const deterministic = strictEgac.decide(
     'Aftergraph/trust-gateway',
     [{ tier: 'tier_2', passed: true }],
     ['tier_2']
   );
   assert.strictEqual(
-    deterministic.decision, 'AUTONOMOUS_EXECUTION',
-    `Deterministic test on governance must be AUTONOMOUS: got ${deterministic.decision}`
+    deterministic.decision, 'RECOMMEND_AUTOMATION',
+    `Deterministic test on governance must recommend automation: got ${deterministic.decision}`
   );
 
   // tier_2 FAIL: should HALT
@@ -294,8 +258,8 @@ console.log('Running EGAC proof suite...\n');
 // ─── 8. Self-Assertion Alone Never Permits Autonomous Execution ──────────────
 (function testSelfAssertionNeverAutonomous() {
   const strictEgac = new EvidenceGatedAutonomyController({
-    costFalsePositive: 1,
-    costFalseNegative: 19, // alpha = 0.05
+    costFalsePositive: 19,
+    costFalseNegative: 1, // alpha = 0.05
   });
 
   // Test across ALL planes: tier_0 alone should NEVER be autonomous
@@ -310,12 +274,12 @@ console.log('Running EGAC proof suite...\n');
   for (const repo of planes) {
     const d = strictEgac.decide(repo, [{ tier: 'tier_0', passed: true }], ['tier_0']);
     assert(
-      d.decision !== 'AUTONOMOUS_EXECUTION',
+      d.decision !== 'RECOMMEND_AUTOMATION',
       `Self-assertion on ${repo} must NEVER be AUTONOMOUS: got ${d.decision}`
     );
   }
 
-  console.log('  PASS: Self-assertion never permits autonomous execution (all planes)');
+  console.log('  PASS: Self-assertion never recommends automation from self-assertion (all planes)');
 })();
 
 // ─── 9. Online Calibration Converges to True Sensitivity ─────────────────────
@@ -384,17 +348,17 @@ console.log('Running EGAC proof suite...\n');
 
 // ─── Summary ─────────────────────────────────────────────────────────────────
 console.log('\n======================================================');
-console.log('  ALL 10 EGAC PROOF TESTS PASSED');
+console.log('  ALL 10 EGAC MODEL-PROPERTY TESTS PASSED');
 console.log('======================================================');
 console.log('');
-console.log('Proven properties:');
-console.log('  1. FCR = 0 for tier_2-only evidence (fail-closed gate)');
+console.log('Model properties checked under provisional assumptions:');
+console.log('  1. Legacy miss-rate product = 0 for tier_2 assumptions; this is not a universal verifier proof');
 console.log('  2. FCR is monotonically non-increasing');
 console.log('  3. Higher evidence tiers weakly dominate lower');
 console.log('  4. Sequential Bayesian update matches analytical computation');
 console.log('  5. Wilson CI contains true proportion');
 console.log('  6. Hoeffding sample complexity is sufficient');
 console.log('  7. Autonomy decision respects cost-asymmetry threshold');
-console.log('  8. Self-assertion never permits autonomous execution');
+console.log('  8. Self-assertion never recommends automation from self-assertion');
 console.log('  9. Online calibration converges to true sensitivity');
 console.log(' 10. Plane classification maps 31 repos to 5 planes');

@@ -196,10 +196,12 @@ async function runAllTests() {
     assert.strictEqual(threw, true);
   });
 
-  await testAsync('NodeBridge executes permitted job.inspect with TG authorization receipt', async () => {
-    const daemon = new NodeBridgeDaemon('vds-eu-central-01', 'cloud-runner');
-    const authReceipt = { ticketId: 'tkt_valid_123', decision: 'ALLOW' };
-    const res = await daemon.executeCommand('job.inspect', { jobId: 'job_forge_412' }, authReceipt);
+  await testAsync('NodeBridge executes permitted job.inspect only after canonical authority verification', async () => {
+    const authorityRef = 'pdr_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    const daemon = new NodeBridgeDaemon('vds-eu-central-01', 'cloud-runner', {
+      authorityVerifier: async ({ commandName, authority }) => commandName === 'job.inspect' && authority.reference === authorityRef
+    });
+    const res = await daemon.executeCommand('job.inspect', { jobId: 'job_forge_412' }, { reference: authorityRef });
 
     assert.strictEqual(res.machineId, 'vds-eu-central-01');
     assert.strictEqual(res.command, 'job.inspect');
@@ -344,21 +346,13 @@ async function runAllTests() {
 
   // --- 10. SECRETS-SAFE CREDENTIAL BROKER ---
   console.log('\n--- 10. Secrets-Safe Credential Broker ---');
-  test('Credential broker issues short-lived scoped ticket without plaintext secret exposure', () => {
+  test('Credential broker cannot mint Trust Gateway execution authority', () => {
     const broker = new CredentialBroker();
-    const ticket = broker.requestScopedTicket({
-      actorId: 'agent-forge',
-      capability: 'fs.write:contracts',
-      ttlSeconds: 60
-    });
-
-    assert.ok(ticket.ticketId.startsWith('tkt_'));
-    assert.strictEqual(ticket.decision, 'ALLOW');
-    assert.ok(ticket.signature);
-
-    const verified = broker.verifyTicket(ticket.ticketId);
-    assert.strictEqual(verified.valid, true);
-    assert.strictEqual(verified.ticket.actorId, 'agent-forge');
+    assert.throws(
+      () => broker.requestScopedTicket({ actorId: 'agent-forge', capability: 'fs.write:contracts' }),
+      /LOCAL_AUTHORITY_DISABLED/
+    );
+    assert.ok(broker.listBindings().every(binding => !Object.prototype.hasOwnProperty.call(binding, 'secret')));
   });
 
   // --- 11. CROSS-SYSTEM E2E ACCEPTANCE PIPELINE ---
@@ -369,8 +363,10 @@ async function runAllTests() {
     const proj = new StateProjector();
     const intel = new UnifiedIntelligenceEngine();
     const pipe = new IngestionPipeline({ eventStore: store, projector: proj, intelligenceEngine: intel });
-    const broker = new CredentialBroker();
-    const vds = new NodeBridgeDaemon('vds-eu-central-01', 'cloud-runner');
+    const authorityRef = 'pdr_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+    const vds = new NodeBridgeDaemon('vds-eu-central-01', 'cloud-runner', {
+      authorityVerifier: async ({ commandName, authority }) => commandName === 'job.stop' && authority.reference === authorityRef
+    });
 
     // 1. Inbound Telegram operator command
     const tgAdapter = new TelegramAdapter();
@@ -382,15 +378,11 @@ async function runAllTests() {
     const ing1 = await pipe.ingest(tgCmdEnv);
     assert.strictEqual(ing1.success, true);
 
-    // 2. Trust Gateway evaluates authority & issues scoped execution ticket
-    const tgTicket = broker.requestScopedTicket({
-      actorId: 'forge',
-      capability: 'job.stop'
-    });
-    assert.strictEqual(tgTicket.decision, 'ALLOW');
+    // 2. Canonical Trust Gateway admission is represented only by an externally verified reference.
+    const canonicalAuthority = { reference: authorityRef };
 
-    // 3. Agent executes governed capability on VDS
-    const execRes = await vds.executeCommand('job.stop', { jobId: 'job_forge_412' }, tgTicket);
+    // 3. Agent executes only after the injected canonical authority verifier accepts.
+    const execRes = await vds.executeCommand('job.stop', { jobId: 'job_forge_412' }, canonicalAuthority);
     assert.strictEqual(execRes.stopped, true);
 
     // 4. GitHub commit observation recorded
@@ -453,8 +445,7 @@ async function runAllTests() {
   });
 
   test('Decision Objects and Decision Inbox resolution with Trust Gateway tickets', () => {
-    const ontology = new OperationalOntologyEngine();
-    const broker = new CredentialBroker();
+    const ontology = new OperationalOntologyEngine({ seedFixtures: true });
     const decisions = ontology.getDecisions();
     assert.ok(decisions.length >= 3);
 
@@ -464,12 +455,12 @@ async function runAllTests() {
     assert.ok(prDecision.whyGraph.nodes.length >= 4);
     assert.ok(prDecision.actionPreview.downstreamServices.length >= 2);
 
-    const ticket = broker.requestScopedTicket({
-      actorId: 'human-operator-jonas',
-      capability: 'decision.approve'
-    });
+    const canonicalAuthority = {
+      canonical: true,
+      reference: 'pdr_cccccccccccccccccccccccccccccccc'
+    };
 
-    const resolution = ontology.resolveDecision(prDecision.id, 'APPROVE', 'human-operator-jonas', ticket);
+    const resolution = ontology.resolveDecision(prDecision.id, 'APPROVE', 'human-operator-jonas', canonicalAuthority);
     assert.strictEqual(resolution.status, 'APPROVED');
     assert.strictEqual(resolution.decisionId, 'DEC-2026-0915-PR93');
     assert.ok(resolution.auditDigest);
@@ -496,10 +487,11 @@ async function runAllTests() {
     assert.strictEqual(diff.diffs.length, 3);
   });
 
-  test('Agent Trust Passports enforce autonomy tiers and budget bounds', () => {
-    const ontology = new OperationalOntologyEngine();
+  test('Synthetic Agent Trust Passport fixtures are explicit and bounded', () => {
+    const ontology = new OperationalOntologyEngine({ seedFixtures: true });
     const passports = ontology.getTrustPassports();
     assert.ok(passports.length >= 4);
+    assert.ok(passports.every(p => p.sourceKind === 'synthetic_fixture'));
 
     const sentinelPassport = passports.find(p => p.agentId === 'sentinel-bot');
     assert.ok(sentinelPassport);
@@ -513,7 +505,7 @@ async function runAllTests() {
   });
 
   console.log('\n===============================================================');
-  console.log(`🏁 TEST RUN SUMMARY: ${passed}/${total} TESTS PASSED (100%)`);
+  console.log(`🏁 TEST RUN SUMMARY: ${passed}/${total} TESTS PASSED (${Math.round((passed / total) * 100)}%)`);
   console.log('===============================================================');
 
   if (passed !== total) {

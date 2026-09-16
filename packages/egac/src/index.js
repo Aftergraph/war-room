@@ -1,17 +1,17 @@
 /**
  * Evidence-Gated Autonomy Controller (EGAC)
  *
- * Replaces the heuristic "BayesianRiskEngine" with a provable algorithm
- * grounded in the VAIE research program and MISSION-Bench empirical results.
+ * Advisory research model derived from VAIE/MISSION-Bench concepts.
+ * It does not grant authority and its fixed tier parameters are assumptions, not universal empirical estimates.
  *
  * Key differences from the old engine:
- * 1. Likelihood ratios are computed from EMPIRICAL sensitivity/specificity,
- *    not hardcoded constants.
+ * 1. Likelihood ratios use provisional tier sensitivity/specificity parameters;
+ *    they require claim-specific calibration before inferential use.
  * 2. Posterior from step i becomes prior for step i+1 (true sequential updating).
- * 3. Computes a PROVABLE upper bound on False Completion Rate (FCR).
+ * 3. Computes a model miss-rate product; it is not a universal FCR proof without explicit verifier-dependence assumptions.
  * 4. Autonomy decision is based on cost-asymmetry threshold, not a magic number.
  *
- * Provable properties:
+ * Algebraic model properties under stated assumptions:
  * - FCR = 0 for tier_2-only evidence (deterministic gate is fail-closed)
  * - FCR is monotonically non-increasing with additional evidence
  * - Higher evidence tiers weakly dominate lower tiers
@@ -29,7 +29,7 @@ const EVIDENCE_TIERS = {
   tier_6: { name: 'human_approval',          sensitivity: 0.98, specificity: 1.00 },
 };
 
-// ─── Empirical Plane Priors (from STUDY-008, Laplace-smoothed) ───────────────
+// ─── Provisional Plane Priors (research assumptions; not live-validated) ─────
 
 const PLANE_PRIORS = {
   GOVERNANCE:    0.42,
@@ -92,7 +92,7 @@ class EvidenceGatedAutonomyController {
     // Cost-asymmetry threshold (default: false positive is 19x worse than false negative)
     this.costFalsePositive = options.costFalsePositive || 19.0;
     this.costFalseNegative = options.costFalseNegative || 1.0;
-    this.alpha = this.costFalsePositive / (this.costFalsePositive + this.costFalseNegative);
+    this.alpha = this.costFalseNegative / (this.costFalsePositive + this.costFalseNegative);
   }
 
   /**
@@ -131,14 +131,14 @@ class EvidenceGatedAutonomyController {
 
   /**
    * Gets the sensitivity for a tier, using calibrated data if available.
-   * Falls back to the empirical estimate from MISSION-Bench.
+   * Falls back to a provisional research parameter; not a universal empirical estimate.
    * @param {string} tierId
    * @returns {number} sensitivity in [0, 1]
    */
   getSensitivity(tierId) {
     const cal = this.calibration[tierId];
     if (cal && cal.total >= 10) {
-      // Use Laplace-smoothed empirical estimate with Wilson lower bound
+      // Use the Laplace-smoothed calibration estimate with Wilson lower bound
       const ci = wilsonCI(cal.passes, cal.total);
       return ci.low; // Conservative: use lower bound
     }
@@ -239,13 +239,13 @@ class EvidenceGatedAutonomyController {
   }
 
   /**
-   * Computes the provable upper bound on False Completion Rate.
+   * Computes the legacy model miss-rate product used for advisory comparison.
    *
    * FCR_bound = Product_i (1 - sensitivity_{t_i})
    *
-   * This is an upper bound because the evidence gate is conjunctive:
-   * ALL criteria must pass for VERIFIED. A defect can only slip through
-   * if EVERY verifier fails to detect it.
+   * Multiplication is only an upper-bound interpretation under additional
+   * dependence/coverage assumptions. The controller therefore exposes this
+   * as ASSUMPTION_MODEL_ONLY and never as executable authority.
    *
    * @param {Array<string>} tierIds - evidence tiers used
    * @returns {{bound: number, perTier: Array, isProvableZero: boolean}}
@@ -269,7 +269,16 @@ class EvidenceGatedAutonomyController {
     return {
       bound: Number(bound.toFixed(8)),
       perTier,
-      isProvableZero: bound === 0,
+      // A zero produced by hard-coded tier assumptions is a model result, not a
+      // formal guarantee about a real verifier/claim pair.
+      isProvableZero: false,
+      modelAssumptionZero: bound === 0,
+      evidenceStatus: 'ASSUMPTION_MODEL_ONLY',
+      assumptions: [
+        'tier sensitivities/specificities are provisional model parameters',
+        'multiplicative miss rates require dependence assumptions not established by STUDY-008',
+        'deterministic-test sensitivity=1 is not universal across claims or oracles',
+      ],
     };
   }
 
@@ -278,7 +287,7 @@ class EvidenceGatedAutonomyController {
    * and the FCR bound.
    *
    * Decision matrix:
-   *   FCR < alpha AND P(defect) < alpha  -> AUTONOMOUS_EXECUTION
+   *   model product < alpha AND P(defect) < alpha -> RECOMMEND_AUTOMATION
    *   FCR < 2*alpha AND P(defect) < 2*alpha -> HUMAN_REVIEW
    *   else -> HALT_AND_ESCALATE
    *
@@ -299,8 +308,8 @@ class EvidenceGatedAutonomyController {
     let reasoning;
 
     if (fcr.bound < alpha && pDefect < alpha) {
-      decision = 'AUTONOMOUS_EXECUTION';
-      reasoning = `FCR bound (${fcr.bound.toExponential(2)}) < alpha (${alpha}) and P(Defect) (${pDefect.toFixed(4)}) < alpha. Safe for autonomous execution.`;
+      decision = 'RECOMMEND_AUTOMATION';
+      reasoning = `FCR bound (${fcr.bound.toExponential(2)}) < alpha (${alpha}) and P(Defect) (${pDefect.toFixed(4)}) < alpha. Advisory evidence threshold met; canonical authority is still required.`;
     } else if (fcr.bound < 2 * alpha && pDefect < 2 * alpha) {
       decision = 'HUMAN_REVIEW';
       reasoning = `FCR bound (${fcr.bound.toExponential(2)}) or P(Defect) (${pDefect.toFixed(4)}) in review zone. Human oracle recommended.`;
@@ -310,7 +319,9 @@ class EvidenceGatedAutonomyController {
     }
 
     return {
-      engine: 'EGAC/v1 (Evidence-Gated Autonomy Controller)',
+      engine: 'EGAC/v1 (advisory research controller)',
+      advisoryOnly: true,
+      authority: 'NONE',
       timestamp: new Date().toISOString(),
       repo: repoName,
       plane,
@@ -323,6 +334,8 @@ class EvidenceGatedAutonomyController {
         posteriorOdds: Number(bayes.odds.toFixed(6)),
         fcrBound: fcr.bound,
         fcrIsProvableZero: fcr.isProvableZero,
+        fcrModelAssumptionZero: fcr.modelAssumptionZero,
+        evidenceStatus: fcr.evidenceStatus,
         alphaThreshold: Number(alpha.toFixed(6)),
       },
       evidenceTrace: bayes.trace,

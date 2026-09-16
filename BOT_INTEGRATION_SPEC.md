@@ -10,7 +10,7 @@ This document specifies how **any bot** (Telegram bot, Discord bot, CLI agent, F
 1. **Observe, Don't Invent**: Bots observe and act, but canonical authority is governed by Trust Gateway (TG).
 2. **Pre-flight Intent Declaration**: Before acquiring locks or modifying branches/files/contracts, bots **MUST** declare their intent to the **Collision Radar** (`POST /api/agents/intent`).
 3. **Exact-HEAD Binding**: Any verification (e.g. Sentinel, CI/CD, test suite) must be linked to the **exact commit SHA**. If the commit SHA advances, the verification is automatically invalidated.
-4. **Secrets-Safe Execution**: Bots **NEVER** hold long-lived root credentials. They acquire short-lived, capability-scoped tickets via `POST /api/auth/ticket`.
+4. **Secrets-Safe Execution**: Bots **NEVER** hold long-lived root credentials and War Room **never mints execution authority**. Consequential actions must use the canonical Relay / Trust Gateway authority path. The local `POST /api/auth/ticket` endpoint is deliberately fail-closed.
 
 ---
 
@@ -93,8 +93,8 @@ Registers the bot in the **Agent Fleet**.
 
 ---
 
-### `POST /api/auth/ticket` (Trust Gateway Scoped Credential)
-Acquires a signed, short-lived ticket to execute a consequential command on a machine or repository.
+### `POST /api/auth/ticket` (Disabled Local Authority Surface)
+War Room does not issue Trust Gateway credentials. This compatibility endpoint is fail-closed until a canonical Relay / Trust Gateway adapter is explicitly wired.
 
 **Request Body:**
 ```json
@@ -106,16 +106,11 @@ Acquires a signed, short-lived ticket to execute a consequential command on a ma
 }
 ```
 
-**Response (200 OK):**
+**Response (503 Service Unavailable):**
 ```json
 {
-  "status": "AUTHORIZED",
-  "ticketId": "tkt_1789493520_a81f",
-  "actorId": "telegram-watchdog-bot",
-  "capability": "job.stop",
-  "expiresAt": "2026-09-15T17:40:20.000Z",
-  "decision": "ALLOW",
-  "signature": "hmac_sha256_digest_hex"
+  "error": "LOCAL_AUTHORITY_DISABLED",
+  "required": "canonical Trust Gateway / Relay authority path"
 }
 ```
 

@@ -1,10 +1,12 @@
 # Evidence-Gated Autonomy Controller (EGAC) — Formal Specification
 
+> **Status: advisory research-only.** EGAC v1 has no execution authority. STUDY-008 is a methodological pilot (2 LIVE_VALID / 9 provider failures / 264 simulated); fixed tier parameters are provisional assumptions, not universal empirical measurements.
+
 ## Problem
 
 The current `BayesianRiskEngine` uses hardcoded likelihood ratios (1.35 for bots, 0.85 for humans) and labels the output "Exact Posterior" with "confidence: 0.95". These are constants, not estimates. There is no sequential updating, no data grounding, and no provable bound on the False Completion Rate (FCR).
 
-This specification defines a replacement algorithm grounded in the VAIE research program and the MISSION-Bench empirical results.
+This specification defines a research model derived from VAIE/MISSION-Bench concepts and simulation-supported results.
 
 ## Definitions
 
@@ -28,7 +30,7 @@ DRAFT -> READY -> AUTHORIZED -> RUNNING -> VERIFYING -> VERIFIED
 | tier_5 | cryptographic_attestation | 1.00 | 1.00 | HMAC-SHA256 verified |
 | tier_6 | human_approval | 0.98 | 1.00 | Human oracle |
 
-### Empirical Priors (from STUDY-008, 275 runs)
+### Provisional priors (research assumptions; not live-validated)
 
 Estimated via Laplace smoothing: P_hat = (k + 1) / (n + 2)
 
@@ -72,9 +74,9 @@ Posterior_Odds_i = Prior_Odds_{i-1} * LR_i
 P_i(Defect | e_1..e_i) = Posterior_Odds_i / (1 + Posterior_Odds_i)
 ```
 
-Critical difference from the old engine: LR_i is computed from **empirical** sensitivity/specificity estimated from MISSION-Bench data, not a hardcoded constant.
+Critical difference from the old engine: LR_i is computed from provisional sensitivity/specificity parameters. Claim-specific calibration is required before inferential use.
 
-### Step 3 — False Completion Rate Bound
+### Step 3 — Legacy Miss-Rate Product (Advisory)
 
 For evidence-gated verification with independent verifiers:
 
@@ -82,19 +84,11 @@ For evidence-gated verification with independent verifiers:
 FCR_bound = Product_{i=1..n} (1 - sensitivity_{t_i})
 ```
 
-Theorem (Provable FCR Reduction):
+Assumption-model interpretation:
 
-**Claim**: For a mission using only tier_2 (deterministic) evidence, FCR = 0.
+If every verifier sensitivity value is valid for the exact claim/oracle pair and verifier misses can be combined under the stated dependence model, the product above is a useful miss-rate model. A configured `tier_2` sensitivity of 1.0 therefore produces a model product of zero.
 
-**Proof**: The AssuranceEngine (engine.py:54-55) is fail-closed: AgentPrincipal is barred from transitioning to VERIFIED. The state machine requires all criteria to be satisfied by qualifying evidence (engine.py:92-93). A tier_2 verifier has sensitivity = 1.0, meaning P(verifier passes | defect exists) = 0. Therefore:
-
-  P(VERIFIED | defect exists) = 0
-  FCR = P(declared_verified AND defect exists) = 0
-
-For mixed tiers:
-  FCR <= Product_i (1 - sensitivity_{t_i})
-
-This is an upper bound because the gate is conjunctive (ALL criteria must pass).
+That zero is **not** a universal proof that real-world FCR is zero. STUDY-008 does not establish perfect deterministic-test sensitivity across arbitrary claims, nor the independence/coverage assumptions required to promote the product to an external safety guarantee. War Room exposes the result as advisory evidence only.
 
 ### Step 4 — Wilson Confidence Interval on Sensitivity
 
@@ -112,13 +106,13 @@ CI_low = max(0, centre - spread)
 CI_high = min(1, centre + spread)
 ```
 
-Use CI_low for conservative sensitivity (worst-case bound).
+Use CI_low as a conservative model parameter; this does not by itself establish external validity.
 
 ### Step 5 — Autonomy Decision
 
 Cost-asymmetry threshold:
 ```
-alpha = C_FP / (C_FP + C_FN)
+alpha = C_FN / (C_FP + C_FN)
 ```
 
 Where:
@@ -131,7 +125,7 @@ P_defect = P_n(Defect | evidence)
 FCR_bound = Product_i (1 - sensitivity_{t_i})
 
 if FCR_bound < alpha AND P_defect < alpha:
-    -> AUTONOMOUS_EXECUTION
+    -> RECOMMEND_AUTOMATION
 elif FCR_bound < 2*alpha AND P_defect < 2*alpha:
     -> HUMAN_REVIEW
 else:
@@ -145,11 +139,11 @@ To estimate sensitivity_t within epsilon with confidence 1-delta:
 n >= ln(1/delta) / (2 * epsilon^2)
 ```
 
-From STUDY-008 (n=275, 7 conditions ~ 39 runs/condition):
+STUDY-008 attempted 275 runs, but the canonical audit classifies 2 as LIVE_VALID, 9 as provider failures and 264 as simulated. The condition rows below are simulation-dominated methodological evidence:
   epsilon = sqrt(ln(20) / (2*39)) ~ 0.21 at 95% confidence per condition.
   With pooled data across conditions: epsilon ~ 0.06 at 95% confidence.
 
-## Provable Properties
+## Algebraic Model Properties (under stated assumptions)
 
 ### Property 1: FCR Monotonicity
 Adding evidence items never increases FCR:
@@ -168,10 +162,10 @@ if sensitivity_{t_high} >= sensitivity_{t_low}:
 ### Property 3: Conjugate Prior Consistency
 Using Beta(1,1) = Uniform as the Laplace-smoothed prior, the posterior after n binomial observations is Beta(k+1, n-k+1). This is the conjugate prior for the binomial likelihood, ensuring computational tractability.
 
-### Property 4: Autonomous Safety
+### Property 4: Advisory Threshold Behavior
 If alpha = 0.05 (standard significance level) and all evidence is tier_2:
   FCR_bound = (1 - 1.0)^n = 0 < 0.05
-  -> AUTONOMOUS_EXECUTION is safe by construction.
+  -> RECOMMEND_AUTOMATION is an advisory model result only; canonical authority is still required.
 
 If any evidence is tier_0 (self-assertion only):
   FCR_bound = (1 - 0.10) = 0.90 > 0.05
