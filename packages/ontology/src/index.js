@@ -9,10 +9,39 @@
  */
 const { computeDigest } = require('../../contracts/src/observation');
 
+const WORLD_ASSERTION_SCHEMA = 'world-assertion/0.1';
+const WORLD_EPISTEMIC = new Set(['observed', 'inferred', 'predicted', 'unknown']);
+const WORLD_CURRENTNESS = new Set(['current', 'stale', 'disputed', 'superseded']);
+const RELATIONAL_PREDICATES = new Set([
+  'runs_on', 'owned_by', 'realizes', 'spawned', 'contains', 'has_lease',
+  'affects', 'caused_by', 'likely_cause', 'mitigates', 'authorized_by',
+  'executed_by', 'verifies', 'depends_on', 'produced_by'
+]);
+const GOVERNED_RELAY_OPERATIONS = new Set([
+  'runtime.execution.inspect',
+  'runtime.execution.cancel',
+  'runtime.service.inspect',
+  'runtime.service.restart',
+  'runtime.host.drain'
+]);
+function validateWorldAssertion(a) {
+  if (!a || a.schema !== WORLD_ASSERTION_SCHEMA) throw new Error('INVALID_WORLD_ASSERTION_SCHEMA');
+  for (const f of ['assertion_id','subject','predicate','value_or_ref']) {
+    if (typeof a[f] !== 'string' || !a[f]) throw new Error(`INVALID_WORLD_ASSERTION_${f.toUpperCase()}`);
+  }
+  if (!WORLD_EPISTEMIC.has(a.epistemic)) throw new Error('INVALID_WORLD_ASSERTION_EPISTEMIC');
+  if (!WORLD_CURRENTNESS.has(a.currentness)) throw new Error('INVALID_WORLD_ASSERTION_CURRENTNESS');
+  if (!Array.isArray(a.source_refs) || a.source_refs.length === 0) throw new Error('WORLD_ASSERTION_PROVENANCE_REQUIRED');
+  if (!Array.isArray(a.evidence_refs)) throw new Error('INVALID_WORLD_ASSERTION_EVIDENCE_REFS');
+}
+function cloneWorldAssertion(a) { return { ...a, source_refs: [...a.source_refs], evidence_refs: [...a.evidence_refs] }; }
+
+
 class OperationalOntologyEngine {
   constructor(options = {}) {
     this.decisions = new Map();
     this.trustPassports = new Map();
+    this.worldAssertions = new Map();
     if (options.seedFixtures === true) {
       this.initDefaultPassports();
       this.initCanonicalDecisions();
@@ -257,6 +286,75 @@ class OperationalOntologyEngine {
     }
   }
 
+  projectWorldAssertions(assertions = []) {
+    if (!Array.isArray(assertions)) throw new Error('WORLD_ASSERTIONS_MUST_BE_ARRAY');
+    const next = new Map();
+    for (const assertion of assertions) {
+      validateWorldAssertion(assertion);
+      if (next.has(assertion.assertion_id)) throw new Error('DUPLICATE_WORLD_ASSERTION_ID');
+      next.set(assertion.assertion_id, cloneWorldAssertion(assertion));
+    }
+    this.worldAssertions = next;
+    return { schema: 'war-room.world-state-projection/1', sourceSchema: WORLD_ASSERTION_SCHEMA,
+      authority: 'NONE', canonicalTruth: false, assertions: this.getWorldAssertions(), graph: this.getOperationalGraph() };
+  }
+
+  getWorldAssertions() { return Array.from(this.worldAssertions.values(), cloneWorldAssertion); }
+
+  getOperationalGraph() {
+    const objectMap = new Map();
+    const links = [];
+    const ensureObject = (ref, assertion) => {
+      if (!objectMap.has(ref)) objectMap.set(ref, { id: ref, type: 'WorldSubject', assertionIds: [], epistemicStates: [], currentnessStates: [], sourceRefs: [], evidenceRefs: [], sourceBacked: true });
+      const node = objectMap.get(ref);
+      if (assertion) {
+        if (!node.assertionIds.includes(assertion.assertion_id)) node.assertionIds.push(assertion.assertion_id);
+        if (!node.epistemicStates.includes(assertion.epistemic)) node.epistemicStates.push(assertion.epistemic);
+        if (!node.currentnessStates.includes(assertion.currentness)) node.currentnessStates.push(assertion.currentness);
+        for (const x of assertion.source_refs) if (!node.sourceRefs.includes(x)) node.sourceRefs.push(x);
+        for (const x of assertion.evidence_refs) if (!node.evidenceRefs.includes(x)) node.evidenceRefs.push(x);
+      }
+    };
+    for (const assertion of this.worldAssertions.values()) {
+      ensureObject(assertion.subject, assertion);
+      if (RELATIONAL_PREDICATES.has(assertion.predicate)) {
+        ensureObject(assertion.value_or_ref, assertion);
+        links.push({ id: `link:${assertion.assertion_id}`, assertionId: assertion.assertion_id,
+          from: assertion.subject, to: assertion.value_or_ref, relation: assertion.predicate,
+          epistemic: assertion.epistemic, currentness: assertion.currentness,
+          sourceRefs: [...assertion.source_refs], evidenceRefs: [...assertion.evidence_refs], sourceBacked: true });
+      }
+    }
+    return { schema: 'war-room.operational-graph/1', sourceSchema: WORLD_ASSERTION_SCHEMA,
+      authority: 'NONE', canonicalTruth: false, objects: Array.from(objectMap.values()), links };
+  }
+
+  buildSituation(targetRef) {
+    const assertions = this.getWorldAssertions().filter((a) => a.subject === targetRef || a.value_or_ref === targetRef);
+    return { schema: 'war-room.situation/1', id: `situation:${targetRef}`, targetRef,
+      assertionIds: assertions.map((a) => a.assertion_id),
+      epistemicStates: [...new Set(assertions.map((a) => a.epistemic))],
+      currentnessStates: [...new Set(assertions.map((a) => a.currentness))],
+      sourceRefs: [...new Set(assertions.flatMap((a) => a.source_refs))],
+      evidenceRefs: [...new Set(assertions.flatMap((a) => a.evidence_refs))],
+      authority: 'NONE', canonicalTruth: false };
+  }
+
+  computeAssertionRealityDiff(expectedAssertions = [], observedAssertions = []) {
+    for (const a of [...expectedAssertions, ...observedAssertions]) validateWorldAssertion(a);
+    const observed = new Map(observedAssertions.map((a) => [`${a.subject}\u0000${a.predicate}`, a]));
+    const diffs = expectedAssertions.map((expected) => {
+      const actual = observed.get(`${expected.subject}\u0000${expected.predicate}`);
+      return { subject: expected.subject, predicate: expected.predicate,
+        status: !actual ? 'MISSING' : actual.value_or_ref === expected.value_or_ref ? 'MATCH' : 'DRIFT',
+        expected: expected.value_or_ref, observed: actual ? actual.value_or_ref : null,
+        expectedSourceRefs: [...expected.source_refs], observedSourceRefs: actual ? [...actual.source_refs] : [],
+        expectedEvidenceRefs: [...expected.evidence_refs], observedEvidenceRefs: actual ? [...actual.evidence_refs] : [] };
+    });
+    return { schema: 'war-room.reality-diff/1', sourceSchema: WORLD_ASSERTION_SCHEMA,
+      authority: 'NONE', canonicalTruth: false, diffs };
+  }
+
   /**
    * Computes Expected vs Observed Reality Diff across declared contracts & live GitHub
    */
@@ -346,6 +444,46 @@ class OperationalOntologyEngine {
     };
   }
 
+  createDecisionProposal({ id, title, targetRef, operation, arguments: operationArguments = {}, assertionIds = [], missionId = null }) {
+    if (!id || !title || !targetRef) throw new Error('INVALID_DECISION_PROPOSAL');
+    if (!GOVERNED_RELAY_OPERATIONS.has(operation)) throw new Error('RELAY_OPERATION_NOT_ALLOWED');
+    if (!Array.isArray(assertionIds) || assertionIds.length === 0) throw new Error('DECISION_ASSERTIONS_REQUIRED');
+    const assertions = assertionIds.map((assertionId) => {
+      const assertion = this.worldAssertions.get(assertionId);
+      if (!assertion) throw new Error(`DECISION_ASSERTION_NOT_FOUND:${assertionId}`);
+      return assertion;
+    });
+    const proposal = {
+      id, title, target: targetRef, objectType: 'DecisionProposal', category: 'OPERATION_PROPOSAL',
+      status: 'PROPOSED', authority: 'NONE', executable: false, sourceKind: 'world_state_projection',
+      operation, arguments: { ...operationArguments }, missionId,
+      assertionIds: [...assertionIds],
+      sourceRefs: [...new Set(assertions.flatMap((item) => item.source_refs))],
+      evidenceRefs: [...new Set(assertions.flatMap((item) => item.evidence_refs))]
+    };
+    this.decisions.set(id, proposal);
+    return { ...proposal, arguments: { ...proposal.arguments }, assertionIds: [...proposal.assertionIds],
+      sourceRefs: [...proposal.sourceRefs], evidenceRefs: [...proposal.evidenceRefs] };
+  }
+
+  async routeDecisionProposal(decisionId, relayPort) {
+    const proposal = this.decisions.get(decisionId);
+    if (!proposal || proposal.sourceKind !== 'world_state_projection') throw new Error('SOURCE_BACKED_DECISION_PROPOSAL_REQUIRED');
+    if (!relayPort || typeof relayPort.submitDecisionProposal !== 'function') throw new Error('RELAY_DECISION_ROUTER_REQUIRED');
+    const result = await relayPort.submitDecisionProposal({
+      decisionId: proposal.id,
+      targetRef: proposal.target,
+      operation: proposal.operation,
+      arguments: { ...proposal.arguments },
+      missionId: proposal.missionId,
+      assertionIds: [...proposal.assertionIds],
+      sourceRefs: [...proposal.sourceRefs],
+      evidenceRefs: [...proposal.evidenceRefs],
+      authority: 'NONE'
+    });
+    return { status: 'ROUTED_TO_RELAY', decisionId: proposal.id, relayResult: result };
+  }
+
   /**
    * Resolves a Decision Object with an authorized Action
    */
@@ -359,6 +497,9 @@ class OperationalOntologyEngine {
     }
 
     const decision = this.decisions.get(decisionId);
+    if (decision.sourceKind === 'world_state_projection') {
+      throw new Error('LOCAL_DECISION_RESOLUTION_DISABLED');
+    }
     if (decision.status !== 'PENDING') {
       throw new Error(`Decision ${decisionId} is already ${decision.status}`);
     }
@@ -393,20 +534,12 @@ class OperationalOntologyEngine {
         return d.whyGraph;
       }
     }
-    // Fallback causal DAG for any general object
-    return {
-      nodes: [
-        { id: '1', label: 'Canonical Contract Ingestion', category: 'CAUSE' },
-        { id: '2', label: 'Live GitHub Event Trigger', category: 'TRIGGER' },
-        { id: '3', label: 'Observation Envelope Correlated', category: 'STATE' },
-        { id: '4', label: 'Trust Gateway Policy Verified', category: 'REMEDY' }
-      ],
-      edges: [
-        { from: '1', to: '2', relation: 'GOVERNS' },
-        { from: '2', to: '3', relation: 'OBSERVED_AS' },
-        { from: '3', to: '4', relation: 'VERIFIED_BY' }
-      ]
-    };
+    const graph = this.getOperationalGraph();
+    const edges = graph.links.filter((edge) => edge.from === targetId || edge.to === targetId);
+    const nodeIds = new Set(edges.flatMap((edge) => [edge.from, edge.to]));
+    if (graph.objects.some((node) => node.id === targetId)) nodeIds.add(targetId);
+    return { schema: 'war-room.why-graph/1', sourceBacked: true, authority: 'NONE', canonicalTruth: false,
+      nodes: graph.objects.filter((node) => nodeIds.has(node.id)), edges };
   }
 }
 
