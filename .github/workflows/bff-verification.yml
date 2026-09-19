@@ -61,6 +61,8 @@ jobs:
             [ -f "$f" ] && node --check "$f"
           done
       - name: Acceptance suite
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: node tests/run-all.js
       - name: Self-check
         run: node check.js
