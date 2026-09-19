@@ -12,7 +12,6 @@
 - Narrator + NVDA empirical pass.
 - Authenticode signing.
 - governed updater + rollback.
-- independent/reproducible Windows build comparison.
 - central secret-format registry for log redaction tests.
 
 ### v1.6.11 security stabilization

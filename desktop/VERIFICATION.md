@@ -24,6 +24,21 @@ Canonical implementation: PR #7, `fix(desktop): harden loopback HTTP boundary`.
 
 These results close the behavioral exit criterion for `WR-SEC-002`. PR #9 is a follow-up only: metadata determinism, version-fixture cleanup, local API documentation, and additional malformed-authority regression coverage. Any material security-code change would require fresh exact-state evidence.
 
+## v1.6.11 independent reproducibility evidence
+
+The published `desktop-v1.6.11` executable is bit-for-bit reproducible on an independent Windows builder when the checkout bytes match the release manifest.
+
+- release source commit — `2d872067a4c866b60ffe205cc609089d72978bdb`
+- tag-triggered release run — `35423444087`, **PASS**
+- official release EXE — `7,982,592` bytes, SHA-256 `16382969514446446f291101eb08ca5292dfd4ad77cbf9f52e5baa4eece42d3a`
+- independent builder — Lenovo Windows target, fresh clone, `core.autocrlf=true`, clean detached checkout of the exact release commit
+- independent toolchain — official `go1.26.8.windows-amd64.zip`, SHA-256 `b92c3b2adae85a11ba71fe7216daf0d84e82af4c8ab6c5625807f28622043a59`
+- source-manifest comparison — **112/112 entries matched** the published `BUILD-MANIFEST.json`
+- independent EXE — `7,982,592` bytes, SHA-256 `16382969514446446f291101eb08ca5292dfd4ad77cbf9f52e5baa4eece42d3a`
+- binary equality — **PASS**
+
+An LF-normalized checkout did not reproduce the historical release and showed 111/112 source-manifest mismatches. Reproduction of this tagged artifact therefore requires the Windows-normalized checkout bytes captured by its release manifest. Full evidence and the exact boundary are recorded in `docs/REPRODUCIBILITY-v1.6.11.md`. This closes `WR-REL-004` for v1.6.11.
+
 ## Source gates completed before GitHub officialization
 
 - `gofmt` — PASS

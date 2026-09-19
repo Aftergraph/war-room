@@ -206,6 +206,11 @@
       "bytes": 3166
     },
     {
+      "path": "docs/REPRODUCIBILITY-v1.6.11.md",
+      "sha256": "b5a2ccd76742506249b5adf74a888a3e76139d2d0a227b9bcca7de457eaa257c",
+      "bytes": 3259
+    },
+    {
       "path": "docs/RESEARCH-BASIS.md",
       "sha256": "d9a86070d21f3f4f4826f83d0daac49645769d925009818b9f27b2ce5fa60e93",
       "bytes": 940
@@ -272,8 +277,8 @@
     },
     {
       "path": "docs/WEAKNESSES-AND-RISK-REGISTER.md",
-      "sha256": "a794eba3864399fdc43fa99be6dec3e950569de8d572b9365ec00f192f799854",
-      "bytes": 4796
+      "sha256": "124a15cafe5724affac6f8764a50a264ec65595a50c716a0f078ce017688e819",
+      "bytes": 5144
     },
     {
       "path": "domains.go",
@@ -512,8 +517,8 @@
     },
     {
       "path": "TODOS.md",
-      "sha256": "d3325fede6b4a73d8295511224b5e4b155702f9ed8f69843448e7030c8bd14cb",
-      "bytes": 1625
+      "sha256": "2a653a9d45a21b13f045b1cda1149b05d0684b9355a5c31e8137ec5cc9830974",
+      "bytes": 1572
     },
     {
       "path": "typesafe_api.go",
@@ -542,8 +547,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "sha256": "415565427c8ae98a0eea58d1d50d3f8aa6c5c16a19a79d8dabb757aacfdd3a2d",
-      "bytes": 7029
+      "sha256": "d08fe3df4bfd82a6c3dc738425c9553aef08698150c29c97b24fa45860ac9bf8",
+      "bytes": 8376
     },
     {
       "path": "web/app.js",
