@@ -1,20 +1,46 @@
-# AFTERGRAPH / WAR ROOM v1.6.13 — Verification
+# AFTERGRAPH / WAR ROOM v1.6.14 — Verification
 
 This document distinguishes completed evidence from pending release gates. A missing tool/result is never treated as PASS.
 
-## v1.6.13 release portability evidence
+## v1.6.14 governed updater candidate
 
-- parent release-ready source: `14ac599a87f5aca1ab434c1633695237722a2814`
-- historical tag `desktop-v1.6.12` remains on that exact commit
-- release run `35430873251` stopped at `Verify tag/version` with `BUILD-MANIFEST.json must use LF-only line endings`; build, package, and publish steps were skipped
-- no v1.6.12 GitHub Release was published by that run
-- v1.6.13 introduces `.gitattributes` to preserve LF bytes for release-critical metadata/scripts across Windows and Linux
-- independent Windows-style clean checkout with `core.autocrlf=true` at `f220e493e59c72216eb4c8aa3ebd4829b64f1696` preserved `BUILD-MANIFEST.json`, `SHA256SUMS.txt`, and `verify-release-metadata.py` with zero CR bytes
-- `python scripts/verify-release-metadata.py` on that clean Windows-style checkout ? **PASS for 1.6.13**
-- runtime secret-registry and authority behavior are unchanged from the verified v1.6.12 implementation
+Implementation scope:
 
-Release remains incomplete until v1.6.13 exact-head stabilization, canonical merge, post-merge stabilization, tag-triggered release, and asset read-back all pass.
+- Ed25519-signed update-plan contract (`aftergraph.war-room.desktop.update-plan/1.0`)
+- compile-time pinned production trust root; runtime caller-supplied trust stores are not supported
+- artifact SHA-256 + byte-count verification before swap
+- state-envelope compatibility preflight and state snapshot
+- adjacent atomic executable swap with previous-binary preservation
+- native post-install health smoke + authenticated shutdown
+- automatic previous-executable restoration when health verification fails
+- CI-only update-plan signer using `WAR_ROOM_UPDATE_SIGNING_KEY_B64`
+- release `--verify-only` path that makes the updater validate the signed plan against its own pinned trust root before publication
+- stabilization CI builds and exact-binary scans both desktop and updater
 
+Local focused evidence obtained before final exact-head CI:
+
+- `go test -count=1 ./internal/updater ./cmd/war-room-updater` — **PASS**
+- `go vet ./internal/updater ./cmd/war-room-updater` — **PASS**
+- signature acceptance/tamper/untrusted-key regressions — **PASS**
+- state-schema incompatibility rejected before executable swap — **PASS**
+- successful swap snapshots state and archives previous executable — **PASS**
+- failed health check restores previous executable byte-for-byte — **PASS**
+
+Production updater trust is intentionally not provisioned yet. `ProductionTrustStore()` currently contains no key, so the official-release trust gate must fail until an approved Aftergraph desktop release public key is committed and the matching CI private signing key/key-id are provisioned. `WR-REL-003` therefore remains **IMPLEMENTED / BLOCKED**, not CLOSED.
+
+## v1.6.13 released-state evidence
+
+- canonical source commit — `20106f8885175a2f006e21a476da4bf867ac4ddd`
+- PR #14 exact-head stabilization — run `35431478700`, **PASS** Linux + native Windows
+- post-merge stabilization — run `35431565767`, **PASS** Linux + native Windows
+- native canonical artifact smoke — **PASS**, version `1.6.13`, Go `go1.26.8`, authenticated shutdown PASS
+- tag — `desktop-v1.6.13`
+- tag-triggered release workflow — run `35431659577`, **PASS**
+- published EXE — `7,982,592` bytes, SHA-256 `8045447dd326e397353c6914bd4cf883153a7747815a3d0600e1a9b52f3c380b`
+- published ZIP — SHA-256 `35110b4cf9b2b8678822d5d9cba8fd383d2e4a080d97cb00654e27e6ba7ee380`
+- published manifest — `releaseStatus=release`, `sourceCommit=20106f8885175a2f006e21a476da4bf867ac4ddd`, exact-binary govulncheck PASS
+- delivered release receipt — `RELEASE-RECEIPT-v1.6.13.md`, SHA-256 `3c68e5ce4060a75ddb79f9dd22fb7376223fd831d08a6f3a28141c7518e96718`
+- historical `desktop-v1.6.12` remains an immutable failed publication attempt; its release run stopped before build/package/publication and no v1.6.12 GitHub Release exists
 
 ## v1.6.12 secret-registry security evidence
 
