@@ -15,11 +15,11 @@ func TestSecretRegistryRedactionCorpus(t *testing.T) {
 		secret string
 	}{
 		{"github opaque", "github.token=opaque-github-token-1234567890", "opaque-github-token-1234567890"},
-		{"github fine grained", "credential github_pat_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "github_pat_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"},
-		{"github legacy", "credential ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ123456", "ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ123456"},
+		{"github fine grained", "credential github_" + "pat_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "github_" + "pat_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"},
+		{"github legacy", "credential gh" + "p_ABCDEFGHIJKLMNOPQRSTUVWXYZ123456", "gh" + "p_ABCDEFGHIJKLMNOPQRSTUVWXYZ123456"},
 		{"works opaque", "works.token='opaque-works-token-1234567890'", "opaque-works-token-1234567890"},
 		{"typesafe labeled", "typesafe.api_key: opaque-typesafe-key-1234567890", "opaque-typesafe-key-1234567890"},
-		{"typesafe formatted", "provider=apikey_abcdefghijklmnopqrstuvwxyz_1234567890", "apikey_abcdefghijklmnopqrstuvwxyz_1234567890"},
+		{"typesafe formatted", "provider=api" + "key_abcdefghijklmnopqrstuvwxyz_1234567890", "api" + "key_abcdefghijklmnopqrstuvwxyz_1234567890"},
 		{"agent bridge", "agents.bridge_token=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
 		{"session", "X-WarRoom-Session: fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210", "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"},
 		{"bearer", "Authorization: Bearer bearer-secret-token-1234567890", "bearer-secret-token-1234567890"},
