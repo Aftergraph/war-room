@@ -9,6 +9,8 @@ This document distinguishes completed evidence from pending release gates. A mis
 - release run `35430873251` stopped at `Verify tag/version` with `BUILD-MANIFEST.json must use LF-only line endings`; build, package, and publish steps were skipped
 - no v1.6.12 GitHub Release was published by that run
 - v1.6.13 introduces `.gitattributes` to preserve LF bytes for release-critical metadata/scripts across Windows and Linux
+- independent Windows-style clean checkout with `core.autocrlf=true` at `f220e493e59c72216eb4c8aa3ebd4829b64f1696` preserved `BUILD-MANIFEST.json`, `SHA256SUMS.txt`, and `verify-release-metadata.py` with zero CR bytes
+- `python scripts/verify-release-metadata.py` on that clean Windows-style checkout ? **PASS for 1.6.13**
 - runtime secret-registry and authority behavior are unchanged from the verified v1.6.12 implementation
 
 Release remains incomplete until v1.6.13 exact-head stabilization, canonical merge, post-merge stabilization, tag-triggered release, and asset read-back all pass.
