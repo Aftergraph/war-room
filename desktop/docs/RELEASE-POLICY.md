@@ -38,7 +38,8 @@ The PR description must name the exact compiler/tool versions and explicitly lis
 - deterministic UI QA when Playwright is available
 - Windows x64 test build
 - Windows GUI build
-- exact-binary `govulncheck` for every shipped executable
+- Authenticode signing for every shipped Windows executable using the controlled production certificate; expected thumbprint + trusted timestamp + post-sign verification must pass
+- exact-binary `govulncheck` for every shipped executable **after** Authenticode signing
 - governed-updater trust gate when an updater is shipped: compile-time public key present, matching CI signing key/key-id available, signed update plan generated, and the built updater verifies that plan/candidate before publication
 - reusable-secret scan
 - native Windows smoke (`/api/health` version + clean shutdown)
@@ -68,6 +69,22 @@ GitHub release assets should include:
 - `CHANGELOG.md`
 
 Compiled binaries are release assets, not source-tree commits.
+
+## Authenticode policy
+
+Official Windows release artifacts must be signed before any final binary hash/provenance is generated. The signing certificate private key is a protected release credential, never a source/runtime secret.
+
+Required ordering:
+
+1. build desktop + updater,
+2. Authenticode-sign both binaries with SHA-256 and an approved HTTPS RFC3161 timestamp service,
+3. verify Windows trust policy and exact signer thumbprint,
+4. run exact-binary vulnerability scans on the signed binaries,
+5. generate/sign the updater plan against the signed desktop EXE,
+6. generate release metadata/checksums from the signed bytes,
+7. package/publish and perform delivered-state signature/hash read-back.
+
+The release must fail closed when certificate material, password, expected thumbprint, timestamp configuration, signing, timestamping, or signature verification is missing/invalid. A self-signed development certificate cannot close `WR-REL-002`.
 
 ## Governed updater policy
 

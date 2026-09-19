@@ -47,6 +47,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           WAR_ROOM_UPDATE_SIGNING_KEY_B64: ${{ secrets.WAR_ROOM_UPDATE_SIGNING_KEY_B64 }}
           WAR_ROOM_UPDATE_SIGNING_KEY_ID: ${{ vars.WAR_ROOM_UPDATE_SIGNING_KEY_ID }}
+          WAR_ROOM_AUTHENTICODE_PFX_B64: ${{ secrets.WAR_ROOM_AUTHENTICODE_PFX_B64 }}
+          WAR_ROOM_AUTHENTICODE_PFX_PASSWORD: ${{ secrets.WAR_ROOM_AUTHENTICODE_PFX_PASSWORD }}
+          WAR_ROOM_AUTHENTICODE_CERT_SHA1: ${{ vars.WAR_ROOM_AUTHENTICODE_CERT_SHA1 }}
+          WAR_ROOM_AUTHENTICODE_TIMESTAMP_URL: ${{ vars.WAR_ROOM_AUTHENTICODE_TIMESTAMP_URL }}
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}".Replace("desktop-v", "")
@@ -61,6 +65,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           go build -trimpath -ldflags="-H=windowsgui -s -w -X main.version=$version" -o dist/Aftergraph-War-Room.exe .
           go build -trimpath -o dist/Aftergraph-War-Room-Updater.exe ./cmd/war-room-updater
+          & ./scripts/sign-windows.ps1 -Path @("dist/Aftergraph-War-Room.exe", "dist/Aftergraph-War-Room-Updater.exe")
           govulncheck -mode=binary dist/Aftergraph-War-Room.exe
           govulncheck -mode=binary dist/Aftergraph-War-Room-Updater.exe
           if ([string]::IsNullOrWhiteSpace($env:WAR_ROOM_UPDATE_SIGNING_KEY_B64)) { throw "WAR_ROOM_UPDATE_SIGNING_KEY_B64 is required for an official desktop release" }

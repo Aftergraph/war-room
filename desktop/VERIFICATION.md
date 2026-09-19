@@ -2,6 +2,26 @@
 
 This document distinguishes completed evidence from pending release gates. A missing tool/result is never treated as PASS.
 
+## v1.6.14 Authenticode candidate
+
+Implemented release controls:
+
+- dedicated `scripts/sign-windows.ps1` with no runtime signing surface
+- protected PFX/password inputs required only in official release CI
+- expected 40-hex signer thumbprint is pinned through repository configuration
+- absolute HTTPS RFC3161 timestamp URL is mandatory
+- PFX is imported non-exportably into the ephemeral current-user certificate store and removed in `finally`
+- both `Aftergraph-War-Room.exe` and `Aftergraph-War-Room-Updater.exe` are signed
+- `signtool verify /pa /all /v` and `Get-AuthenticodeSignature` must both pass
+- resulting signer thumbprint must equal the expected thumbprint
+- exact-binary `govulncheck` executes on post-signing bytes
+- updater plan is generated after signing, so its artifact SHA-256 binds the shipped signed EXE
+- release metadata/checksums are generated after signing
+- source regression test pins sign → scan → update-plan → metadata ordering
+- Windows stabilization runs `sign-windows.ps1 -ValidateOnly` without requiring production credentials
+
+Production evidence is intentionally absent: no trusted production certificate has been provisioned and no signed v1.6.14 release has been published/read back. `WR-REL-002` remains **IMPLEMENTED / BLOCKED**, not CLOSED.
+
 ## v1.6.14 governed updater candidate
 
 Implementation scope:

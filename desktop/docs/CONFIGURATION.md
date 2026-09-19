@@ -65,6 +65,17 @@ Under `%LOCALAPPDATA%\Aftergraph\WarRoom\`:
 
 Release builds must also have `staticcheck` and `govulncheck` available on PATH.
 
+### Authenticode release controls
+
+These inputs exist only in the protected GitHub release environment; they are not runtime configuration.
+
+- `WAR_ROOM_AUTHENTICODE_PFX_B64` — **GitHub Actions secret only**. Base64 PKCS#12/PFX containing the production Windows code-signing private key and certificate.
+- `WAR_ROOM_AUTHENTICODE_PFX_PASSWORD` — **GitHub Actions secret only**. PFX password.
+- `WAR_ROOM_AUTHENTICODE_CERT_SHA1` — repository variable containing the expected 40-hex certificate thumbprint. The release fails if the imported or resulting signer certificate differs.
+- `WAR_ROOM_AUTHENTICODE_TIMESTAMP_URL` — repository variable containing the approved absolute HTTPS RFC3161 timestamp service URL.
+
+The release runner writes the PFX only under `RUNNER_TEMP`, imports it non-exportably into the ephemeral current-user certificate store, signs both shipped EXEs with SHA-256, verifies them with `signtool /pa /all` and `Get-AuthenticodeSignature`, then removes imported certificate material and the temporary PFX. The signed binaries—not pre-signing bytes—are subsequently scanned, hashed, bound into `UPDATE-PLAN.json`, and recorded in release metadata.
+
 ### Governed updater release controls
 
 - `WAR_ROOM_UPDATE_SIGNING_KEY_B64` — **GitHub Actions secret only**. Base64 Ed25519 private key used by the CI-only update-plan signer. It must never be stored in runtime state, source, artifacts, logs, screenshots, or release notes.

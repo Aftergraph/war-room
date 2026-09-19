@@ -12,12 +12,14 @@ The format follows Keep a Changelog conventions and semantic versioning. A versi
 - `war-room-updater --verify-only` release gate so the published updater validates the signed plan against the same pinned trust root before publication.
 
 ### Security
+- Added fail-closed Authenticode release signing for desktop + updater with pinned signer thumbprint, HTTPS RFC3161 timestamping, post-sign trust verification, and signed-byte provenance ordering. Production certificate material remains intentionally unprovisioned in source.
 - Caller-supplied trust stores are deliberately unsupported. A caller cannot replace the updater trust root at runtime.
 - Official release is fail-closed while the production update public key is unprovisioned; release CI also requires the corresponding private signing key and key id.
 - Stabilization CI builds and exact-binary scans both the desktop app and updater helper.
 
 ### Release status
 - v1.6.14 is a candidate line only. `WR-REL-003` remains blocked on production signing/trust provisioning and an official signed-plan delivered-state verification.
+- `WR-REL-002` signing infrastructure is implemented but remains blocked on a controlled trusted production code-signing certificate and delivered signed-release verification.
 
 ## [1.6.13] - 2026-09-19
 
