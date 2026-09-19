@@ -15,25 +15,20 @@ import (
 func main() {
 	var (
 		planPath      = flag.String("plan", "", "signed update-plan JSON")
-		trustPath     = flag.String("trust", "", "trusted update-key JSON")
 		candidatePath = flag.String("candidate", "", "downloaded candidate executable")
 		installPath   = flag.String("install", "", "installed Aftergraph-War-Room.exe path")
 		stateDir      = flag.String("state-dir", "", "War Room state directory")
 		backupDir     = flag.String("backup-dir", "", "update backup directory")
 	)
 	flag.Parse()
-	if *planPath == "" || *trustPath == "" || *candidatePath == "" || *installPath == "" || *stateDir == "" {
-		fail("plan, trust, candidate, install and state-dir are required")
+	if *planPath == "" || *candidatePath == "" || *installPath == "" || *stateDir == "" {
+		fail("plan, candidate, install and state-dir are required")
 	}
 	plan, err := updater.LoadPlan(*planPath)
 	if err != nil {
 		fail("load plan: %v", err)
 	}
-	trust, err := updater.LoadTrustStore(*trustPath)
-	if err != nil {
-		fail("load trust store: %v", err)
-	}
-	if err := updater.VerifyPlan(plan, trust); err != nil {
+	if err := updater.VerifyPlan(plan, updater.ProductionTrustStore()); err != nil {
 		fail("verify signed update plan: %v", err)
 	}
 	if *backupDir == "" {
