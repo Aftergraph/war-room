@@ -2,6 +2,18 @@
 
 This document distinguishes completed evidence from pending release gates. A missing tool/result is never treated as PASS.
 
+## v1.6.12 secret-registry security evidence
+
+- central registry source: `secret_registry.go`
+- production vault credential coverage: `github.token`, `works.token`, `typesafe.api_key`, `agents.bridge_token`
+- non-vault credential transports: `X-WarRoom-Session`, Bearer authorization, generic named-secret fallback
+- regression corpus: GitHub fine-grained/classic tokens, opaque GitHub/WORKS/TypeSafe values, Agent Bridge token, War Room session, Bearer transport, generic JSON token — **PASS locally**
+- production source coverage test scans direct `vault.Get/Set/Delete` calls and fails if any used vault key is absent from the registry — **PASS locally**
+- full `go test -count=1 ./...` — **PASS locally**
+- `go vet ./...` — **PASS locally**
+
+`WR-SEC-003` remains a closure candidate until Desktop stabilization is green on the final exact PR HEAD and the canonical merge completes without material redaction changes.
+
 ## v1.6.11 loopback-boundary security evidence
 
 Canonical implementation: PR #7, `fix(desktop): harden loopback HTTP boundary`.

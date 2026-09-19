@@ -1,8 +1,8 @@
-# AFTERGRAPH / WAR ROOM Desktop v1.6.11
+# AFTERGRAPH / WAR ROOM Desktop v1.6.12
 
 Portable Windows x64 operator environment for **live, evidence-bounded Aftergraph system reality**.
 
-v1.6.11 is the **loopback HTTP boundary hardening** line. It builds on the released v1.6.10 officialization baseline and fails closed on Host/Origin mismatches before session, API, or static routing. The control plane still binds only to `127.0.0.1`; mutation routes still require the ephemeral session capability in addition to the transport-origin policy.
+v1.6.12 is the **credential redaction registry hardening** line. It builds on the released v1.6.11 loopback-boundary baseline and replaces ad-hoc log-secret regex ownership with one typed registry covering every production vault credential plus session/Bearer transport surfaces. New vault-backed credential keys fail regression coverage until registered.
 
 The desktop implementation lives under `desktop/` in the canonical `Aftergraph/war-room` repository. Local ZIPs and chat-generated binaries are evidence inputs only; GitHub merge/tag/release is the official distribution record. Current residual weaknesses are tracked in `docs/WEAKNESSES-AND-RISK-REGISTER.md`.
 

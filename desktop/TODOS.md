@@ -12,7 +12,10 @@
 - Narrator + NVDA empirical pass.
 - Authenticode signing.
 - governed updater + rollback.
-- central secret-format registry for log redaction tests.
+
+### v1.6.12 secret-registry stabilization
+
+- `WR-SEC-003` central secret registry + regression corpus — **IMPLEMENTED / VERIFYING**; close after exact-head CI and canonical merge.
 
 ### v1.6.11 security stabilization
 

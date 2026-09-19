@@ -1,36 +1,13 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sync"
 )
 
-var logSecretPatterns = []*regexp.Regexp{
-	regexp.MustCompile(`(?i)(github_pat_[A-Za-z0-9_]+|ghp_[A-Za-z0-9]+|apikey_[A-Za-z0-9_=-]+)`),
-	regexp.MustCompile(`(?i)Bearer\s+[A-Za-z0-9._~+/-]+=*`),
-	regexp.MustCompile(`(?i)(api[_-]?key|token|authorization)(["'=:\s]+)[A-Za-z0-9._~+/-]{20,}`),
-}
-
-func redactLogBytes(p []byte) []byte {
-	out := append([]byte(nil), p...)
-	for _, re := range logSecretPatterns {
-		out = re.ReplaceAllFunc(out, func(m []byte) []byte {
-			lower := bytes.ToLower(m)
-			if bytes.HasPrefix(lower, []byte("bearer ")) {
-				return []byte("Bearer [REDACTED]")
-			}
-			if idx := bytes.IndexAny(m, "'=:\t "); idx >= 0 && !bytes.HasPrefix(lower, []byte("github_pat_")) && !bytes.HasPrefix(lower, []byte("ghp_")) && !bytes.HasPrefix(lower, []byte("apikey_")) {
-				return append(append([]byte(nil), m[:idx+1]...), []byte("[REDACTED]")...)
-			}
-			return []byte("[REDACTED]")
-		})
-	}
-	return out
-}
+func redactLogBytes(p []byte) []byte { return redactRegisteredSecrets(p) }
 
 type rotatingLogWriter struct {
 	mu       sync.Mutex
