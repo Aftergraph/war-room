@@ -4,7 +4,16 @@ All notable changes to the AFTERGRAPH / WAR ROOM Desktop line are recorded here.
 
 The format follows Keep a Changelog conventions and semantic versioning. A version is not considered released until its exact source commit, native Windows build, verification record, executable SHA-256, and release notes are published together.
 
-## [1.6.10] - Unreleased
+## [1.6.11] - Unreleased
+
+### Security
+- Hardened the loopback HTTP boundary against DNS-rebinding and cross-origin session/token access: every request must use the exact IPv4 loopback authority opened by the desktop runtime, and requests carrying an `Origin` must match that authority exactly.
+- Added regression coverage for hostile Host, hostile Origin, mismatched loopback ports, malformed Origin paths, and mutation attempts that present a valid session capability from a hostile Origin.
+
+### Changed
+- Desktop build/release defaults and stabilization builds now target v1.6.11.
+
+## [1.6.10] - 2026-09-19
 
 ### Added
 - Canonical release governance for the desktop line: changelog, configuration reference, weakness/risk register, release policy, GitHub officialization guide, and machine-readable settings schema.
@@ -27,7 +36,7 @@ The format follows Keep a Changelog conventions and semantic versioning. A versi
 - Exact candidate EXE SHA-256: `b2b9a3e36881195f28766f08ecf18986a0ac8254f25e5a92546357a484d1cf44`.
 - Native `/api/health` reported `version=1.6.10`, `ok=true`, `go=go1.26.8`; single-instance and authenticated shutdown smoke tests passed.
 - Canonical GitHub officialization is complete through merge: PR #5 head `e7808c229f95c40acf74534fd031883b403e76e1` passed `Desktop stabilization`, merged as `f274787eb8de5ad6763361844877b1023073caed`, and the post-merge `main` stabilization run also passed.
-- The version remains **Unreleased** until `desktop-v1.6.10` tag/release workflow, release assets, checksums, and delivered-state read-back are complete.
+- v1.6.10 was released as `desktop-v1.6.10` from exact source commit `fabcdd048dbf3e3f20267cc9b03df7b4112c4a7d`; the tag-triggered release workflow and post-publication asset/hash read-back passed. The immutable release carries `RELEASE-RECEIPT-v1.6.10.md` for delivered-state evidence.
 
 ## [1.6.9] - 2026-09-19
 

@@ -1,24 +1,23 @@
 # AFTERGRAPH / WAR ROOM Desktop — release and stabilization backlog
 
-## P0 — v1.6.10 officialization / release blockers
+## Completed release milestone — v1.6.10
 
-1. Commit the final desktop source under canonical `Aftergraph/war-room/desktop`.
-2. Add path-scoped GitHub CI, release workflow, CODEOWNERS, desktop release PR template, and structured desktop bug template.
-3. Run GitHub Actions on the exact PR head and reconcile any differences from the native Lenovo gates.
-4. Merge only when `WR-REL-001` can be closed and no other P0 item is OPEN.
-5. Build release artifacts from the exact merged/tagged commit and regenerate `BUILD-MANIFEST.json` + `SHA256SUMS.txt` in the release artifact.
-6. Tag as `desktop-v1.6.10`; publish EXE/ZIP/checksums/verification/changelog as GitHub Release assets.
-7. Update the changelog entry date from `Unreleased` to the actual GitHub release date.
+- Canonical source, path-scoped CI, release workflow, CODEOWNERS/templates, exact-HEAD PR verification, canonical merge, release manifest/checksums, `desktop-v1.6.10` tag, GitHub Release publication, and delivered-state asset/hash read-back are complete.
+- Exact released source commit: `fabcdd048dbf3e3f20267cc9b03df7b4112c4a7d`.
+- Delivered-state receipt: `RELEASE-RECEIPT-v1.6.10.md` attached to the immutable GitHub Release.
 
 ## P1 — next stabilization versions
 
 - >=2h native resource soak with GitHub + WORKS + Agent Bridge connected.
 - Narrator + NVDA empirical pass.
-- Host/Origin hardening or formal acceptance of the single-user loopback threat boundary.
 - Authenticode signing.
 - governed updater + rollback.
 - independent/reproducible Windows build comparison.
 - central secret-format registry for log redaction tests.
+
+### v1.6.11 security stabilization
+
+- Host/Origin hardening — **IMPLEMENTED / VERIFYING** in PR #7; close only after the final exact PR HEAD and post-merge `main` stabilization runs are green and delivered candidate evidence is reconciled.
 
 ## P2 / accepted limitations
 

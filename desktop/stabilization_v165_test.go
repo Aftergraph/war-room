@@ -218,7 +218,7 @@ func TestCoreHandlersMethodAndMutationContracts(t *testing.T) {
 	}
 	h := a.routes()
 	for _, c := range cases {
-		req := httptest.NewRequest(c.method, c.path, strings.NewReader(c.body))
+		req := loopbackTestRequest(c.method, c.path, strings.NewReader(c.body))
 		if c.auth {
 			req.Header.Set("X-WarRoom-Session", a.session)
 			req.Header.Set("Authorization", "Bearer "+a.ensureAgentBridgeToken())
@@ -235,7 +235,7 @@ func TestSettingsMetricsAndDiagnosticsHandlers(t *testing.T) {
 	a := testApp(t)
 	h := a.routes()
 	do := func(method, path, body string, auth bool) *httptest.ResponseRecorder {
-		req := httptest.NewRequest(method, path, strings.NewReader(body))
+		req := loopbackTestRequest(method, path, strings.NewReader(body))
 		if auth {
 			req.Header.Set("X-WarRoom-Session", a.session)
 		}
@@ -266,13 +266,13 @@ func TestSettingsMetricsAndDiagnosticsHandlers(t *testing.T) {
 func TestTypeSafeConnectionReadAndDelete(t *testing.T) {
 	a := testApp(t)
 	h := a.routes()
-	req := httptest.NewRequest(http.MethodGet, "/api/typesafe/connection", nil)
+	req := loopbackTestRequest(http.MethodGet, "/api/typesafe/connection", nil)
 	rr := httptest.NewRecorder()
 	h.ServeHTTP(rr, req)
 	if rr.Code != 200 {
 		t.Fatal(rr.Code)
 	}
-	req = httptest.NewRequest(http.MethodDelete, "/api/typesafe/connection", nil)
+	req = loopbackTestRequest(http.MethodDelete, "/api/typesafe/connection", nil)
 	req.Header.Set("X-WarRoom-Session", a.session)
 	rr = httptest.NewRecorder()
 	h.ServeHTTP(rr, req)
@@ -284,7 +284,7 @@ func TestTypeSafeConnectionReadAndDelete(t *testing.T) {
 func TestSSEStreamReadyUpdateAndCancel(t *testing.T) {
 	a := testApp(t)
 	ctx, cancel := context.WithCancel(context.Background())
-	req := httptest.NewRequest(http.MethodGet, "/api/stream", nil).WithContext(ctx)
+	req := loopbackTestRequest(http.MethodGet, "/api/stream", nil).WithContext(ctx)
 	rr := httptest.NewRecorder()
 	done := make(chan struct{})
 	go func() { a.streamHandler(rr, req); close(done) }()

@@ -23,6 +23,8 @@ Windows .exe
 
 The browser/app-mode shell is a projection. It does not receive GitHub credentials. Consequential local API mutations require an ephemeral per-launch session capability, and the GitHub token is resolved only inside the Go process from the Windows DPAPI vault.
 
+The HTTP control plane is intentionally a single-user local boundary, not network authentication. The runtime binds only to `127.0.0.1`; request admission additionally requires an exact IPv4 loopback `Host` authority with an explicit port. If an `Origin` header is present, exactly one value is accepted and it must be `http://127.0.0.1:<same-port>` with no userinfo, path, query, or fragment. DNS-rebinding hosts, cross-site origins, mismatched loopback ports, malformed origins, and duplicate Origin headers fail closed before API or static handlers run. The session capability remains independently required for mutation routes.
+
 ## Live update model
 
 1. `hostLoop` observes the local machine every 15 seconds and broadcasts an SSE update.

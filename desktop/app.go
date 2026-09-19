@@ -7,9 +7,12 @@ import (
 	"encoding/hex"
 	"io/fs"
 	"log"
+	"net"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -18,7 +21,7 @@ import (
 //go:embed web/*
 var webFS embed.FS
 
-var version = "1.6.10"
+var version = "1.6.11"
 
 type App struct {
 	store                *Store
@@ -156,8 +159,43 @@ func (a *App) routes() http.Handler {
 	webRoot, _ := fs.Sub(webFS, "web")
 	fileServer := http.FileServer(http.FS(webRoot))
 	mux.Handle("/", fileServer)
-	return securityHeaders(mux)
+	return securityHeaders(loopbackRequestPolicy(mux))
 }
+
+func loopbackAuthority(authority string) bool {
+	host, port, err := net.SplitHostPort(strings.TrimSpace(authority))
+	if err != nil || host != "127.0.0.1" {
+		return false
+	}
+	p, err := strconv.Atoi(port)
+	return err == nil && p > 0 && p <= 65535
+}
+
+func loopbackRequestPolicy(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !loopbackAuthority(r.Host) {
+			http.Error(w, "forbidden host", http.StatusForbidden)
+			return
+		}
+		origins := r.Header.Values("Origin")
+		if len(origins) > 1 {
+			http.Error(w, "forbidden origin", http.StatusForbidden)
+			return
+		}
+		if len(origins) == 1 {
+			origin := strings.TrimSpace(origins[0])
+			if origin != "" {
+				u, err := url.Parse(origin)
+				if err != nil || u.Scheme != "http" || u.User != nil || u.Path != "" || u.RawQuery != "" || u.Fragment != "" || !loopbackAuthority(u.Host) || u.Host != r.Host {
+					http.Error(w, "forbidden origin", http.StatusForbidden)
+					return
+				}
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func securityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
