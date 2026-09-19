@@ -39,7 +39,14 @@ jobs:
           $sourceVersion = $line.Matches[0].Groups[1].Value
           if ($version -ne $sourceVersion) { throw "tag $version does not match app version $sourceVersion" }
           python scripts/verify-release-metadata.py
+          $env:WAR_ROOM_OFFICIAL_RELEASE = "1"
+          go test -run TestOfficialReleaseRequiresProductionUpdateTrust -count=1 ./internal/updater
+          Remove-Item Env:WAR_ROOM_OFFICIAL_RELEASE -ErrorAction SilentlyContinue
       - name: Full release gates
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WAR_ROOM_UPDATE_SIGNING_KEY_B64: ${{ secrets.WAR_ROOM_UPDATE_SIGNING_KEY_B64 }}
+          WAR_ROOM_UPDATE_SIGNING_KEY_ID: ${{ vars.WAR_ROOM_UPDATE_SIGNING_KEY_ID }}
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}".Replace("desktop-v", "")
@@ -53,7 +60,16 @@ jobs:
           node --check web/icons.js
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           go build -trimpath -ldflags="-H=windowsgui -s -w -X main.version=$version" -o dist/Aftergraph-War-Room.exe .
+          go build -trimpath -o dist/Aftergraph-War-Room-Updater.exe ./cmd/war-room-updater
           govulncheck -mode=binary dist/Aftergraph-War-Room.exe
+          govulncheck -mode=binary dist/Aftergraph-War-Room-Updater.exe
+          if ([string]::IsNullOrWhiteSpace($env:WAR_ROOM_UPDATE_SIGNING_KEY_B64)) { throw "WAR_ROOM_UPDATE_SIGNING_KEY_B64 is required for an official desktop release" }
+          if ([string]::IsNullOrWhiteSpace($env:WAR_ROOM_UPDATE_SIGNING_KEY_ID)) { throw "WAR_ROOM_UPDATE_SIGNING_KEY_ID is required for an official desktop release" }
+          $currentTag = gh release list --repo "${{ github.repository }}" --limit 1 --json tagName --jq '.[0].tagName'
+          if ([string]::IsNullOrWhiteSpace($currentTag)) { throw "no previous desktop release found for update-plan currentVersion" }
+          $currentVersion = $currentTag.Replace("desktop-v", "")
+          go run ./cmd/war-room-update-plan --current $currentVersion --target $version --source-commit "${{ github.sha }}" --artifact dist/Aftergraph-War-Room.exe --key-id $env:WAR_ROOM_UPDATE_SIGNING_KEY_ID --out dist/UPDATE-PLAN.json
+          go run ./cmd/war-room-updater --verify-only --plan dist/UPDATE-PLAN.json --candidate dist/Aftergraph-War-Room.exe
           $env:RELEASE_GATES_COMPLETE = "1"
           $env:OFFICIAL_RELEASE = "1"
           python scripts/generate-release-metadata.py
@@ -65,11 +81,17 @@ jobs:
           $stage = "dist/Aftergraph-War-Room-$version-Windows-x64"
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
           Copy-Item dist/Aftergraph-War-Room.exe $stage/
+          Copy-Item dist/Aftergraph-War-Room-Updater.exe $stage/
+          Copy-Item dist/UPDATE-PLAN.json $stage/
           Copy-Item CHANGELOG.md,VERIFICATION.md,README.md,LICENSE.txt $stage/
           Copy-Item docs/WEAKNESSES-AND-RISK-REGISTER.md $stage/
           Copy-Item BUILD-MANIFEST.json,SHA256SUMS.txt $stage/
           $hash = (Get-FileHash dist/Aftergraph-War-Room.exe -Algorithm SHA256).Hash.ToLower()
+          $updaterHash = (Get-FileHash dist/Aftergraph-War-Room-Updater.exe -Algorithm SHA256).Hash.ToLower()
+          $planHash = (Get-FileHash dist/UPDATE-PLAN.json -Algorithm SHA256).Hash.ToLower()
           "$hash  Aftergraph-War-Room.exe" | Add-Content "$stage/SHA256SUMS.txt"
+          "$updaterHash  Aftergraph-War-Room-Updater.exe" | Add-Content "$stage/SHA256SUMS.txt"
+          "$planHash  UPDATE-PLAN.json" | Add-Content "$stage/SHA256SUMS.txt"
           Compress-Archive -Path "$stage/*" -DestinationPath "dist/Aftergraph-War-Room-$version-Windows-x64.zip" -Force
           Get-FileHash "dist/Aftergraph-War-Room-$version-Windows-x64.zip" -Algorithm SHA256 | Format-List
       - name: Publish GitHub Release
@@ -80,6 +102,8 @@ jobs:
           $version = "${{ github.ref_name }}".Replace("desktop-v", "")
           gh release create "${{ github.ref_name }}" `
             "dist/Aftergraph-War-Room.exe" `
+            "dist/Aftergraph-War-Room-Updater.exe" `
+            "dist/UPDATE-PLAN.json" `
             "dist/Aftergraph-War-Room-$version-Windows-x64.zip" `
             "BUILD-MANIFEST.json" "SHA256SUMS.txt" `
             "CHANGELOG.md" "VERIFICATION.md" `
