@@ -25,6 +25,7 @@ func TestLoopbackRequestPolicyRejectsHostAndCrossOriginSessionExfiltration(t *te
 		{name: "loopback same origin", host: "127.0.0.1:37621", origin: "http://127.0.0.1:37621", want: http.StatusOK},
 		{name: "localhost host rejected", host: "localhost:37621", origin: "http://localhost:37621", want: http.StatusForbidden},
 		{name: "dns rebind host", host: "attacker.example:37621", want: http.StatusForbidden},
+		{name: "loopback host with nonnumeric port", host: "127.0.0.1:http", want: http.StatusForbidden},
 		{name: "loopback host without port", host: "127.0.0.1", want: http.StatusForbidden},
 		{name: "cross site origin", host: "127.0.0.1:37621", origin: "https://attacker.example", want: http.StatusForbidden},
 		{name: "different loopback port", host: "127.0.0.1:37621", origin: "http://127.0.0.1:49999", want: http.StatusForbidden},
@@ -64,7 +65,7 @@ func TestLoopbackRequestPolicyRejectsDuplicateOriginHeaders(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/api/session", nil)
 	r.Host = "127.0.0.1:37621"
 	r.Header.Add("Origin", "http://127.0.0.1:37621")
-	r.Header.Add("Origin", "http://127.0.0.1:37621")
+	r.Header.Add("Origin", "https://attacker.example")
 	w := httptest.NewRecorder()
 	a.routes().ServeHTTP(w, r)
 	if w.Code != http.StatusForbidden {

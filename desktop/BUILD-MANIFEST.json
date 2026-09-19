@@ -2,29 +2,33 @@
   "schema": "aftergraph.war-room.desktop.build-manifest/2.0",
   "name": "Aftergraph War Room Desktop",
   "version": "1.6.11",
-  "generatedAt": "2026-09-19T05:10:24.304024+00:00",
+  "generatedAt": "2026-09-19T05:17:37.586747+00:00",
   "releaseType": "stabilization-officialization",
   "releaseStatus": "candidate",
   "sourceCommit": null,
   "coverageStatementPercent": 66.7,
   "toolchain": {
-    "go": "",
-    "staticcheck": "",
-    "govulncheck": ""
+    "go": "go1.27.1",
+    "staticcheck": "staticcheck 2026.2.1 (0.8.1)",
+    "govulncheck": "Go: go1.27.1"
   },
   "verification": {
     "metadata": true,
-    "unit": false,
-    "race": false,
-    "vet": false,
-    "staticcheck": false,
-    "frontendSyntax": false,
-    "windowsCrossBuild": false,
-    "windowsGuiBuild": false,
-    "govulncheckBinary": false,
-    "secretScan": false
+    "unit": true,
+    "race": true,
+    "vet": true,
+    "staticcheck": true,
+    "frontendSyntax": true,
+    "windowsCrossBuild": true,
+    "windowsGuiBuild": true,
+    "govulncheckBinary": true,
+    "secretScan": true
   },
-  "executable": null,
+  "executable": {
+    "path": "dist/Aftergraph-War-Room.exe",
+    "sha256": "6f3401e88ad4fd04382e2ce11641636fe03a04722419073c2f997b4f60f23b71",
+    "bytes": 8530944
+  },
   "files": [
     {
       "path": ".gitignore",
@@ -103,8 +107,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "195e22a54db38c923f920995016225819f1547236d548162b5a6e7f0b4f2a48d",
-      "bytes": 5983
+      "sha256": "2c671ea0cbd5c6636ca282a44be4f8f50656199c7dda738b7bcec2f37b2c738b",
+      "bytes": 6243
     },
     {
       "path": "config/settings.example.json",
@@ -183,8 +187,8 @@
     },
     {
       "path": "docs/LOCAL-API.md",
-      "sha256": "82e178cd3a654a2e2cc11c66d24f5c0be11f87f59327f55bea5d51e31e34ae27",
-      "bytes": 840
+      "sha256": "0eeea5aa0e96bcc86f9d7f39c19a16a1a11db6c9d76999d39f40fb68453e9917",
+      "bytes": 1390
     },
     {
       "path": "docs/NATIVE-ASSISTANT-v1.6.md",
@@ -268,8 +272,8 @@
     },
     {
       "path": "docs/WEAKNESSES-AND-RISK-REGISTER.md",
-      "sha256": "4ca99e61b1cc98b2f6fa564e77cb04d5efc3398cf403728f3cf821871f6e9b3f",
-      "bytes": 4907
+      "sha256": "a794eba3864399fdc43fa99be6dec3e950569de8d572b9365ec00f192f799854",
+      "bytes": 4796
     },
     {
       "path": "domains.go",
@@ -333,8 +337,8 @@
     },
     {
       "path": "http_security_test.go",
-      "sha256": "32792c91d74b25f4b37d898f2aff9a170d5d5be94457350bd9bee5aae8553daf",
-      "bytes": 2611
+      "sha256": "b6c4dd26295ec0070bfd459bfa2ba6f29ebd10d81a4a9b94a70245069362ba64",
+      "bytes": 2713
     },
     {
       "path": "intelligence_eval.go",
@@ -398,13 +402,13 @@
     },
     {
       "path": "qa/render_shell.py",
-      "sha256": "cf204fbfd52e6275b5c12012a6306537b87252046e442f71de3f0119ed742383",
+      "sha256": "e0c31b191f095685b0c6a8fc43eb144d5b9f18521a38fa245f17eaa2ad2a8e40",
       "bytes": 28476
     },
     {
       "path": "README.md",
-      "sha256": "2f686cf5a25b9ec26234b9479ce3324144cc201a2865760565be621a8c45c1ea",
-      "bytes": 7608
+      "sha256": "75e1467d86af123d9b6d9357fdd0c34359d8ae02004a5c980037ed5f86c43196",
+      "bytes": 7549
     },
     {
       "path": "route_contract_test.go",
@@ -423,13 +427,13 @@
     },
     {
       "path": "scripts/generate-release-metadata.py",
-      "sha256": "a620c268cbd28826854d04c828047a7f52fc409bcdd1b05daf07e97638cc1d71",
-      "bytes": 3099
+      "sha256": "4a108f77b24688a9b40bb5d5bf159edbcdd2576a578b1a1f05f1c0e556bdfbc1",
+      "bytes": 3215
     },
     {
       "path": "scripts/verify-release-metadata.py",
-      "sha256": "1f69d2ffe5043705d0a2cf245a1f6bd0b8c934e5f70be9c1ce6986d6d90f420b",
-      "bytes": 1003
+      "sha256": "dd0cc1cfbce550257f30aac45366612c4453f6d72e035a227341aed5a385b4dd",
+      "bytes": 1722
     },
     {
       "path": "secrets_other.go",
@@ -508,8 +512,8 @@
     },
     {
       "path": "TODOS.md",
-      "sha256": "aeafef4680a3b60ad2c6e8aaf34b2626b90606fe61f720f9127422e52676a74a",
-      "bytes": 1410
+      "sha256": "d3325fede6b4a73d8295511224b5e4b155702f9ed8f69843448e7030c8bd14cb",
+      "bytes": 1625
     },
     {
       "path": "typesafe_api.go",
@@ -538,12 +542,12 @@
     },
     {
       "path": "VERIFICATION.md",
-      "sha256": "8da43462197d2e38aab46e29f98406f46d4fab3e902fa0c47e3f6d5c94ecf0ac",
-      "bytes": 6679
+      "sha256": "415565427c8ae98a0eea58d1d50d3f8aa6c5c16a19a79d8dabb757aacfdd3a2d",
+      "bytes": 7029
     },
     {
       "path": "web/app.js",
-      "sha256": "e0f5aea7f6622b98607b60f6d704d808127bdd2ab1f8ab9a90025c139b07fc62",
+      "sha256": "a6a1c79b87a689ceefb37b3a233d2070b910fbe88cd8cffd85b3ca7813360e3b",
       "bytes": 66511
     },
     {
