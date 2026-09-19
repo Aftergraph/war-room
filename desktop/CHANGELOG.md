@@ -26,7 +26,8 @@ The format follows Keep a Changelog conventions and semantic versioning. A versi
 - Final v1.6.10 source passed native Windows unit, shuffle/repeat, race, vet, `staticcheck`, JS syntax, strict-CSP inline-style, Windows cross-test/build, exact-binary `govulncheck`, and secret-scan gates using Go 1.26.8.
 - Exact candidate EXE SHA-256: `b2b9a3e36881195f28766f08ecf18986a0ac8254f25e5a92546357a484d1cf44`.
 - Native `/api/health` reported `version=1.6.10`, `ok=true`, `go=go1.26.8`; single-instance and authenticated shutdown smoke tests passed.
-- The version remains **Unreleased** until canonical GitHub PR/CI/merge/tag/release provenance is complete.
+- Canonical GitHub officialization is complete through merge: PR #5 head `e7808c229f95c40acf74534fd031883b403e76e1` passed `Desktop stabilization`, merged as `f274787eb8de5ad6763361844877b1023073caed`, and the post-merge `main` stabilization run also passed.
+- The version remains **Unreleased** until `desktop-v1.6.10` tag/release workflow, release assets, checksums, and delivered-state read-back are complete.
 
 ## [1.6.9] - 2026-09-19
 

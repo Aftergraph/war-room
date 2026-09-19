@@ -52,13 +52,21 @@ Executed on the target Lenovo from the final source snapshot after the static-an
 - same-state-directory second process — **PASS**: second process exited and only the first listener remained
 - authenticated `/api/shutdown` — **PASS**; endpoint was unreachable ~900 ms later
 
+### Canonical GitHub officialization evidence
+
+- canonical PR — **PASS**: PR #5 reviewed head `e7808c229f95c40acf74534fd031883b403e76e1`
+- path-scoped `Desktop stabilization` on exact PR head — **PASS**, GitHub Actions run `35419509619`
+- merge to canonical `main` — **PASS**: merge commit `f274787eb8de5ad6763361844877b1023073caed` at `2026-09-19T03:49:23Z`
+- post-merge `Desktop stabilization` on exact canonical `main` commit — **PASS**, GitHub Actions run `35419637477`
+- canonical source location — **PASS**: `Aftergraph/war-room/desktop`
+- P0 weakness register — **PASS for tagging precondition**: `WR-SEC-001` and `WR-REL-001` are closed; tag/release publication remains a separate mandatory release gate
+
 ### Remaining official-release gates
 
-- canonical `Aftergraph/war-room` desktop PR on exact source — PENDING
-- path-scoped GitHub Actions green on exact PR head — PENDING
-- merge to canonical `main` — PENDING
-- `desktop-v1.6.10` tag + GitHub Release assets/checksums — PENDING
-- no P0 OPEN item in the risk register — currently blocked only by source officialization (`WR-REL-001`)
+- `desktop-v1.6.10` tag — PENDING
+- tag-triggered `Desktop release` workflow on the exact tagged commit — PENDING
+- GitHub Release assets/checksums generated from the tagged commit — PENDING
+- delivered-state read-back: release asset inventory + hashes + manifest `sourceCommit` bound to the exact tag commit — PENDING
 
 ## UI evidence carried forward as baseline, not release proof
 
