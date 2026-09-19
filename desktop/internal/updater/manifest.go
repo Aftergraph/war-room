@@ -83,6 +83,23 @@ func canonicalPayload(p Plan) ([]byte, error) {
 	return json.Marshal(p)
 }
 
+
+func SignPlan(p Plan, keyID string, privateKey ed25519.PrivateKey) (Plan, error) {
+	if len(privateKey) != ed25519.PrivateKeySize {
+		return p, errors.New("invalid ed25519 private key")
+	}
+	if keyID == "" {
+		return p, errors.New("update signing key id is required")
+	}
+	p.Signature = Signature{Algorithm: "ed25519", KeyID: keyID}
+	payload, err := canonicalPayload(p)
+	if err != nil {
+		return p, err
+	}
+	p.Signature.Value = base64.StdEncoding.EncodeToString(ed25519.Sign(privateKey, payload))
+	return p, nil
+}
+
 func VerifyPlan(p Plan, trust TrustStore) error {
 	if p.Schema != PlanSchema {
 		return fmt.Errorf("unsupported update plan schema %q", p.Schema)
