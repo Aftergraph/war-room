@@ -4,7 +4,7 @@ All notable changes to the AFTERGRAPH / WAR ROOM Desktop line are recorded here.
 
 The format follows Keep a Changelog conventions and semantic versioning. A version is not considered released until its exact source commit, native Windows build, verification record, executable SHA-256, and release notes are published together.
 
-## [1.6.12] - Unreleased
+## [1.6.12] - 2026-09-19
 
 ### Security
 - Replaced ad-hoc log-secret pattern ownership with a central typed secret registry covering GitHub, WORKS, TypeSafe, Agent Bridge, War Room session, Bearer transport, and generic named-secret surfaces.
@@ -14,6 +14,12 @@ The format follows Keep a Changelog conventions and semantic versioning. A versi
 ### Changed
 - Log and diagnostic redaction now route through the canonical registry instead of a private regex list in `logging.go`.
 - Desktop build/release defaults and QA version fixtures now target v1.6.12.
+
+### Release verification
+- PR #11 final HEAD `a13a6d9b3d6b10fbbbaa14b7d8ddefddbff69ce2` and canonical merge `a917cffd4a6cb56435cc936abfb624d02dd5a65c` passed Linux + native Windows stabilization.
+- WR-SEC-003 closure PR #12 merged as `2f418e6940a2d8385f0d11682d8015acf32b2a91`; post-merge run `35430579387` passed Linux + native Windows.
+- Exact post-closure Windows artifact smoke on Lenovo: `/api/health` reported v1.6.12 / Go 1.26.8 and authenticated shutdown completed cleanly.
+- Smoke artifact: 7,982,592 bytes; SHA-256 `c4f3a82c8ae0a8046a81e0a5cb05c63081ec016439894d281ec851397d16c174`.
 
 ## [1.6.11] - 2026-09-19
 
