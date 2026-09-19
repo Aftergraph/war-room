@@ -58,20 +58,20 @@ func writeSoakEvidence(t *testing.T, duration int, samples int, nonLiveAt int) (
 	for i := 0; i < samples; i++ {
 		live := i != nonLiveAt
 		row := map[string]any{
-			"sample":             i + 1,
-			"elapsedSec":         i * 30,
-			"workingSetBytes":    58_000_000 + (i%7)*120_000,
-			"privateBytes":       61_000_000 + (i%5)*130_000,
-			"goHeapBytes":        2_500_000 + (i%11)*90_000,
-			"handleCount":        418 + (i % 6),
-			"threadCount":        19 + (i % 2),
-			"githubSource":       "GitHub REST API",
+			"sample":              i + 1,
+			"elapsedSec":          i * 30,
+			"workingSetBytes":     58_000_000 + (i%7)*120_000,
+			"privateBytes":        61_000_000 + (i%5)*130_000,
+			"goHeapBytes":         2_500_000 + (i%11)*90_000,
+			"handleCount":         418 + (i % 6),
+			"threadCount":         19 + (i % 2),
+			"githubSource":        "GitHub REST API",
 			"githubAuthenticated": true,
-			"worksConfigured":    true,
-			"worksEnabled":       true,
-			"worksSourceStatus":  "live",
-			"bridgeSourceStatus": "live",
-			"agentsStale":        0,
+			"worksConfigured":     true,
+			"worksEnabled":        true,
+			"worksSourceStatus":   "live",
+			"bridgeSourceStatus":  "live",
+			"agentsStale":         0,
 			"connectorStates": map[string]any{
 				"github": map[string]any{
 					"state":          "live",
