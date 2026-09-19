@@ -17,7 +17,8 @@
 
 ### v1.6.11 security stabilization
 
-- Host/Origin hardening — **IMPLEMENTED / VERIFYING** in PR #7; close only after the final exact PR HEAD and post-merge `main` stabilization runs are green and delivered candidate evidence is reconciled.
+- Host/Origin hardening — **CLOSED**: PR #7 final head `86b653c769f8b6a2097fc93232fd823b623fd491` and post-merge `main@2d872067a4c866b60ffe205cc609089d72978bdb` both passed `Desktop stabilization`.
+- Follow-up hardening — keep release metadata deterministic across Windows/Linux, remove generated artifacts from source manifests, refresh v1.6.11 UI/QA version fixtures, and retain adversarial Host/Origin edge cases.
 
 ## P2 / accepted limitations
 

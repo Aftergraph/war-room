@@ -35,9 +35,9 @@ for p in sorted(root.rglob('*')):
     if not p.is_file():
         continue
     rel=p.relative_to(root).as_posix()
-    if rel in {'BUILD-MANIFEST.json','SHA256SUMS.txt'} or rel.startswith('dist/') or '/.git/' in '/'+rel:
+    if rel in {'BUILD-MANIFEST.json','SHA256SUMS.txt','coverage.out'} or rel.startswith('dist/') or '/.git/' in '/'+rel or '/__pycache__/' in '/'+rel:
         continue
-    if rel.endswith(('.zip','.exe')) or rel in {'test.log','race.log','vet.log','staticcheck.log','govulncheck-v1610.log'}:
+    if rel.endswith(('.zip','.exe','.pyc')) or rel in {'test.log','race.log','vet.log','staticcheck.log','govulncheck-v1610.log'}:
         continue
     files.append({'path':rel,'sha256':sha(p),'bytes':p.stat().st_size})
 
@@ -68,10 +68,10 @@ manifest={
   'executable': None if not exe.exists() else {'path':'dist/Aftergraph-War-Room.exe','sha256':sha(exe),'bytes':exe.stat().st_size},
   'files':files
 }
-(root/'BUILD-MANIFEST.json').write_text(json.dumps(manifest,indent=2)+'\n')
+(root/'BUILD-MANIFEST.json').write_text(json.dumps(manifest,indent=2)+'\n', encoding='utf-8', newline='\n')
 lines=[]
 if exe.exists(): lines.append(f"{sha(exe)}  dist/Aftergraph-War-Room.exe")
 for item in files:
     lines.append(f"{item['sha256']}  {item['path']}")
-(root/'SHA256SUMS.txt').write_text('\n'.join(lines)+'\n')
+(root/'SHA256SUMS.txt').write_text('\n'.join(lines)+'\n', encoding='utf-8', newline='\n')
 print(f"generated manifest/checksums for {version}: {len(files)} source files")

@@ -1,10 +1,10 @@
-# AFTERGRAPH / WAR ROOM Desktop v1.6.10
+# AFTERGRAPH / WAR ROOM Desktop v1.6.11
 
 Portable Windows x64 operator environment for **live, evidence-bounded Aftergraph system reality**.
 
-v1.6.10 is the **officialization + security-baseline stabilization candidate** for the desktop line. It preserves the v1.6.9 runtime/UI hardening, raises the release toolchain floor after exact-binary vulnerability scanning exposed the old Go 1.23.2 baseline, and adds canonical release governance: changelog, configuration contract, weakness/risk register, release policy, and GitHub CI/release rules.
+v1.6.11 is the **loopback HTTP boundary hardening** line. It builds on the released v1.6.10 officialization baseline and fails closed on Host/Origin mismatches before session, API, or static routing. The control plane still binds only to `127.0.0.1`; mutation routes still require the ephemeral session capability in addition to the transport-origin policy.
 
-The desktop implementation is intended to live under `desktop/` in the canonical `Aftergraph/war-room` repository. Local ZIPs and chat-generated binaries are evidence inputs only; GitHub merge/tag/release is the official distribution record. Current residual weaknesses are tracked in `docs/WEAKNESSES-AND-RISK-REGISTER.md`.
+The desktop implementation lives under `desktop/` in the canonical `Aftergraph/war-room` repository. Local ZIPs and chat-generated binaries are evidence inputs only; GitHub merge/tag/release is the official distribution record. Current residual weaknesses are tracked in `docs/WEAKNESSES-AND-RISK-REGISTER.md`.
 
 1. near-live GitHub organization activity and CI reconciliation across the full Aftergraph repository inventory,
 2. a read-only execution-presence fabric for WORKS runners and generic Hermes/Vibe/Codex/custom agent heartbeats,

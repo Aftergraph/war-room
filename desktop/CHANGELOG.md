@@ -9,9 +9,11 @@ The format follows Keep a Changelog conventions and semantic versioning. A versi
 ### Security
 - Hardened the loopback HTTP boundary against DNS-rebinding and cross-origin session/token access: every request must use the exact IPv4 loopback authority opened by the desktop runtime, and requests carrying an `Origin` must match that authority exactly.
 - Added regression coverage for hostile Host, hostile Origin, mismatched loopback ports, malformed Origin paths, and mutation attempts that present a valid session capability from a hostile Origin.
+- Extended boundary regressions to reject nonnumeric loopback ports and mixed duplicate-Origin headers.
 
 ### Changed
 - Desktop build/release defaults and stabilization builds now target v1.6.11.
+- Release metadata generation now emits deterministic LF output on Windows and excludes generated coverage/Python cache artifacts from the source manifest.
 
 ## [1.6.10] - 2026-09-19
 

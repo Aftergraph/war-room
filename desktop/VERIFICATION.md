@@ -4,9 +4,11 @@ This document distinguishes completed evidence from pending release gates. A mis
 
 ## v1.6.11 loopback-boundary security evidence
 
-Implementation target: PR #7, `fix(desktop): harden loopback HTTP boundary`.
+Canonical implementation: PR #7, `fix(desktop): harden loopback HTTP boundary`.
 
-- implementation HEAD `168bd28e5049d4cbc5a0d45732513e52e5ad001b` — **PASS** through `Desktop stabilization` run `35422788362`
+- implementation evidence HEAD `168bd28e5049d4cbc5a0d45732513e52e5ad001b` — **PASS** through `Desktop stabilization` run `35422788362`
+- final PR #7 HEAD `86b653c769f8b6a2097fc93232fd823b623fd491` — **PASS** through exact-head `Desktop stabilization` run `35423255178`
+- canonical merge commit `2d872067a4c866b60ffe205cc609089d72978bdb` — **PASS** through post-merge `main` run `35423366567`
 - Linux gates — **PASS**: release metadata, format, unit, shuffle/repeat, race, vet, `staticcheck`, frontend syntax, strict-CSP source gate, Windows cross-build, exact-binary `govulncheck`, reusable-secret scan, SHA-256
 - native Windows gates — **PASS**: source gates, Windows GUI build, exact-binary `govulncheck`, artifact upload
 - exact CI-produced v1.6.11 Windows EXE downloaded to the Lenovo target — **PASS**, `7,982,592` bytes, SHA-256 `d2cfac9cca8aef381b9450b228f7290ce8483c617af2deb57b3a4ef3e018f99c`
@@ -20,7 +22,7 @@ Implementation target: PR #7, `fix(desktop): harden loopback HTTP boundary`.
 - hostile Origin carrying a valid `X-WarRoom-Session` on a mutation route → **403**
 - authenticated native shutdown — **PASS**, Trust Gateway `job.stop` authorization obtained and endpoint became unreachable after shutdown
 
-These results satisfy the behavioral exit criterion for `WR-SEC-002`. The final PR-head documentation/manifest commit must still rerun the exact-HEAD stabilization workflow; material code changes invalidate this evidence.
+These results close the behavioral exit criterion for `WR-SEC-002`. PR #9 is a follow-up only: metadata determinism, version-fixture cleanup, local API documentation, and additional malformed-authority regression coverage. Any material security-code change would require fresh exact-state evidence.
 
 ## Source gates completed before GitHub officialization
 
