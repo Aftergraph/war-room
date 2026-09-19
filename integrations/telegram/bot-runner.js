@@ -112,18 +112,9 @@ class TelegramBotRunner {
     }
 
     if (trimmed === '/quarantine') {
-      const res = await fetchJson('/api/commands/dispatch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: {
-          command: 'agent.quarantine',
-          target: 'all-workers',
-          actor: sender
-        }
-      });
       return {
-        status: 'EMERGENCY_EXECUTED',
-        text: `🚨 EMERGENCY BOT QUARANTINE DISPATCHED\nTrust Gateway Ticket: ${res.authReceipt?.ticketId}\nAll worker slices halted.`
+        status: 'AUTHORITY_PATH_REQUIRED',
+        text: 'Quarantine was not executed locally. Route this request through the canonical Relay / Trust Gateway authority path; War Room command dispatch is fail-closed.'
       };
     }
 

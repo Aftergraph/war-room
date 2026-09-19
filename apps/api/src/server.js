@@ -78,15 +78,17 @@ const integrationRegistry = new IntegrationRegistry();
 const credentialBroker = new CredentialBroker();
 const ontologyEngine = new OperationalOntologyEngine();
 
-// Non-blocking live org sync on boot to hydrate 31 repositories from GitHub
-githubAdapter.syncLiveOrg().then(syncRes => {
-  if (syncRes && syncRes.repos) {
-    projector.updateRepositories(syncRes.repos);
-    console.log(`[Server] Live Aftergraph Org synced: ${syncRes.totalRepos} repositories, ${syncRes.totalOpenPrs} open PRs`);
-  }
-}).catch(err => {
-  console.warn('[Server] Initial live org sync notice:', err.message);
-});
+// Non-blocking live org sync on boot. Tests may disable only this external observation.
+if (process.env.WAR_ROOM_DISABLE_BOOT_SYNC !== '1') {
+  githubAdapter.syncLiveOrg().then(syncRes => {
+    if (syncRes && syncRes.repos) {
+      projector.updateRepositories(syncRes.repos);
+      console.log(`[Server] Live Aftergraph Org synced: ${syncRes.totalRepos} repositories, ${syncRes.totalOpenPrs} open PRs`);
+    }
+  }).catch(err => {
+    console.warn('[Server] Initial live org sync notice:', err.message);
+  });
+}
 
 // Ingest seed events if store is empty
 if (eventStore.getEventCount() === 0 && seedData && Array.isArray(seedData.events)) {
@@ -353,9 +355,14 @@ const server = http.createServer(async (req, res) => {
       const tierIds = tiersParam.split(',').map(t => t.trim());
       const fcr = intelEngine.computeFCRBound(tierIds);
       return sendJson(res, 200, {
+        advisoryOnly: true,
+        authority: 'NONE',
         tiers: tierIds,
         fcrBound: fcr.bound,
         isProvableZero: fcr.isProvableZero,
+        modelAssumptionZero: fcr.modelAssumptionZero,
+        evidenceStatus: fcr.evidenceStatus,
+        assumptions: fcr.assumptions,
         decomposition: fcr.perTier,
         timestamp: new Date().toISOString(),
       });
@@ -451,17 +458,11 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 200, { status: 'HEARTBEAT_ACK', timestamp: new Date().toISOString() });
       }
 
-      // Scoped Credential / Trust Gateway Ticket
+      // Canonical authority is owned by Trust Gateway / Relay, never minted here.
       if (reqPath === '/api/auth/ticket') {
-        const { actorId, capability, target, ttlSeconds } = payload;
-        const ticket = credentialBroker.requestScopedTicket({
-          actorId: actorId || 'autonomous-bot',
-          capability: capability || 'system.command',
-          ttlSeconds: ttlSeconds || 300
-        });
-        return sendJson(res, 200, {
-          status: 'AUTHORIZED',
-          ...ticket
+        return sendJson(res, 503, {
+          error: 'LOCAL_AUTHORITY_DISABLED',
+          required: 'canonical Trust Gateway / Relay authority path'
         });
       }
 
@@ -471,38 +472,9 @@ const server = http.createServer(async (req, res) => {
       }
 
       if (reqPath === '/api/commands/dispatch') {
-        const { command, target, params } = payload;
-        
-        // Trust Gateway Policy Evaluation
-        const ticket = credentialBroker.requestScopedTicket({
-          actorId: payload.actor || 'human-operator',
-          capability: command || 'system.command'
-        });
-
-        if (command === 'agent.quarantine') {
-          realtimeHub.broadcast('alert', {
-            type: 'EMERGENCY_QUARANTINE',
-            target,
-            ticketId: ticket.ticketId,
-            timestamp: new Date().toISOString()
-          });
-          return sendJson(res, 200, {
-            status: 'EXECUTED',
-            command: 'agent.quarantine',
-            target,
-            authReceipt: ticket
-          });
-        }
-
-        if (command === 'job.stop') {
-          const result = await vdsDaemon.executeCommand('job.stop', params, ticket);
-          return sendJson(res, 200, { status: 'EXECUTED', result, authReceipt: ticket });
-        }
-
-        return sendJson(res, 200, {
-          status: 'AUTHORIZED',
-          command,
-          authReceipt: ticket
+        return sendJson(res, 503, {
+          error: 'CANONICAL_AUTHORITY_REQUIRED',
+          required: 'Relay/Trust Gateway governed execution adapter'
         });
       }
 
@@ -556,22 +528,12 @@ const server = http.createServer(async (req, res) => {
         }
       }
 
-      // Operational Decision Resolution (Approve / Reject)
+      // Operational decisions are proposals here; canonical authority/control lives in Relay/TG.
       if (reqPath.startsWith('/api/ontology/decisions/') && reqPath.endsWith('/action')) {
-        const parts = reqPath.split('/');
-        const decisionId = parts[4];
-        const { action, actor } = payload;
-        try {
-          const ticket = credentialBroker.requestScopedTicket({
-            actorId: actor || 'human-operator-jonas',
-            capability: `decision.${(action || 'resolve').toLowerCase()}`
-          });
-          const resolution = ontologyEngine.resolveDecision(decisionId, action, actor, ticket);
-          realtimeHub.broadcast('decision.resolved', resolution);
-          return sendJson(res, 200, resolution);
-        } catch (err) {
-          return sendJson(res, 400, { error: err.message });
-        }
+        return sendJson(res, 503, {
+          error: 'CANONICAL_AUTHORITY_REQUIRED',
+          required: 'Relay/Trust Gateway governed decision path'
+        });
       }
 
       return sendJson(res, 404, { error: 'Endpoint not found' });

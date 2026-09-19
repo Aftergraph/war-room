@@ -13,8 +13,10 @@ class OperationalOntologyEngine {
   constructor(options = {}) {
     this.decisions = new Map();
     this.trustPassports = new Map();
-    this.initDefaultPassports();
-    this.initCanonicalDecisions();
+    if (options.seedFixtures === true) {
+      this.initDefaultPassports();
+      this.initCanonicalDecisions();
+    }
   }
 
   /**
@@ -100,7 +102,7 @@ class OperationalOntologyEngine {
     ];
 
     for (const p of defaultPassports) {
-      this.trustPassports.set(p.agentId, p);
+      this.trustPassports.set(p.agentId, { ...p, sourceKind: 'synthetic_fixture' });
     }
   }
 
@@ -251,7 +253,7 @@ class OperationalOntologyEngine {
     ];
 
     for (const it of items) {
-      this.decisions.set(it.id, it);
+      this.decisions.set(it.id, { ...it, sourceKind: 'synthetic_fixture' });
     }
   }
 
@@ -352,6 +354,10 @@ class OperationalOntologyEngine {
       throw new Error(`Decision Object ${decisionId} not found`);
     }
 
+    if (!ticket || ticket.canonical !== true || typeof ticket.reference !== 'string' || !ticket.reference) {
+      throw new Error('CANONICAL_AUTHORITY_REQUIRED');
+    }
+
     const decision = this.decisions.get(decisionId);
     if (decision.status !== 'PENDING') {
       throw new Error(`Decision ${decisionId} is already ${decision.status}`);
@@ -360,7 +366,7 @@ class OperationalOntologyEngine {
     decision.status = action === 'APPROVE' ? 'APPROVED' : (action === 'REJECT' ? 'REJECTED' : 'EXECUTED');
     decision.resolvedAt = new Date().toISOString();
     decision.resolvedBy = actorId || 'human-operator-jonas';
-    decision.resolutionTicket = ticket?.ticketId || 'TG-AUTH-DIRECT';
+    decision.resolutionTicket = ticket.reference;
 
     return {
       success: true,

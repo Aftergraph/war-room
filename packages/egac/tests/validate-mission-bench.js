@@ -1,11 +1,11 @@
 /**
- * EGAC Validation Against MISSION-Bench STUDY-008 Empirical Data
+ * EGAC Methodological Check Against STUDY-008 Mixed Pilot Data
  *
  * Reads the 275-run dataset and validates that:
  * 1. Condition A (baseline): FCR > 0 (false completions occur without evidence gate)
  * 2. Condition E/F/G (evidence-gated): FCR = 0 (by construction, as EGAC proves)
  * 3. EGAC decision matches actual outcomes for each condition
- * 4. Wilson CI on empirical FCR contains the EGAC-predicted bound
+ * 4. Simulation-dominated condition summaries are compared descriptively with the model product
  */
 const fs = require('fs');
 const path = require('path');
@@ -32,6 +32,8 @@ const rows = lines.slice(1).map(line => {
 });
 
 console.log(`Loaded ${rows.length} runs from STUDY-008\n`);
+console.log('Evidence status: METHODOLOGICAL_PILOT — 2 LIVE_VALID / 9 provider failures / 264 simulated.');
+console.log('Simulation-derived condition metrics below are not inferential live evidence.\n');
 
 // ─── Parse booleans ──────────────────────────────────────────────────────────
 
@@ -58,9 +60,9 @@ const conditions = Object.keys(byCondition).sort();
 console.log('Conditions found:', conditions.join(', '));
 console.log('');
 
-// ─── Compute empirical metrics per condition ─────────────────────────────────
+// ─── Compute mixed-pilot metrics per condition ─────────────────────────────────
 
-console.log('--- Empirical Metrics per Condition ---');
+console.log('--- Mixed-Pilot Condition Metrics (simulation-dominated) ---');
 
 const conditionMetrics = {};
 for (const cond of conditions) {
@@ -100,102 +102,102 @@ for (const cond of conditions) {
   console.log(`    VSR=${vsr.toFixed(2)}% [${conditionMetrics[cond].vsrCI.low}%, ${conditionMetrics[cond].vsrCI.high}%]`);
 }
 
-// ─── Validation 1: Baseline (Condition A) has FCR > 0 ────────────────────────
+// ─── Check 1: mixed-pilot baseline fixture row has FCR > 0 ────────────────────────
 
-console.log('\n--- Validation 1: Baseline FCR > 0 ---');
+console.log('\n--- Check 1: Mixed-Pilot Baseline Fixture Row ---');
 const baselineFCR = conditionMetrics['A'].fcr;
 assert(
   baselineFCR > 0,
   `Condition A (baseline) must have FCR > 0 (false completions occur without evidence gate): got ${baselineFCR}%`
 );
-console.log(`  PASS: Baseline FCR = ${baselineFCR}% > 0 (false completions confirmed in data)`);
+console.log(`  PASS: Mixed-pilot baseline row FCR = ${baselineFCR}% > 0 (simulation-dominated fixture)`);
 
-// ─── Validation 2: Evidence-gated (E, F, G) have FCR = 0 ──────────────────────
+// ─── Check 2: mixed-pilot E/F/G fixture rows ──────────────────────
 
-console.log('\n--- Validation 2: Evidence-Gated FCR = 0 ---');
+console.log('\n--- Check 2: Mixed-Pilot E/F/G Fixture Rows ---');
 for (const cond of ['E', 'F', 'G']) {
   if (!conditionMetrics[cond]) continue;
   const fcr = conditionMetrics[cond].fcr;
   assert(
     fcr === 0,
-    `Condition ${cond} (evidence-gated) must have FCR = 0 (provable by construction): got ${fcr}%`
+    `Condition ${cond} (evidence-gated) mixed-pilot row is expected to report FCR = 0 in this fixture: got ${fcr}%`
   );
-  console.log(`  PASS: Condition ${cond} FCR = 0% (evidence gate prevents false completion)`);
+  console.log(`  PASS: Condition ${cond} mixed-pilot row reports FCR = 0%`);
 }
 
-// ─── Validation 3: EGAC FCR bound matches empirical data ──────────────────────
+// ─── Check 3: advisory model product vs mixed-pilot rows ──────────────────────
 
-console.log('\n--- Validation 3: EGAC FCR Bound Matches Empirical Data ---');
+console.log('\n--- Check 3: EGAC Assumption Product Compared With Mixed-Pilot Rows ---');
 
-const egac = new EvidenceGatedAutonomyController({ costFalsePositive: 1, costFalseNegative: 19 });
+const egac = new EvidenceGatedAutonomyController({ costFalsePositive: 19, costFalseNegative: 1 });
 
 // Condition A: no evidence gate (tier_0 only = self-assertion)
 const fcrBoundA = egac.computeFCRBound(['tier_0']);
 console.log(`  Condition A: EGAC FCR bound (tier_0) = ${(fcrBoundA.bound * 100).toFixed(2)}%`);
-console.log(`    Empirical FCR = ${conditionMetrics['A'].fcr}% [${conditionMetrics['A'].fcrCI.low}%, ${conditionMetrics['A'].fcrCI.high}%]`);
-// The bound is an UPPER bound, so empirical FCR should be <= bound
+console.log(`    Mixed-pilot FCR = ${conditionMetrics['A'].fcr}% [${conditionMetrics['A'].fcrCI.low}%, ${conditionMetrics['A'].fcrCI.high}%]`);
+// Descriptive comparison only: the mixed pilot is simulation-dominated and not inferential live evidence
 // (or within the confidence interval of the bound)
-console.log(`    Bound >= empirical: ${fcrBoundA.bound * 100 >= conditionMetrics['A'].fcrCI.low ? 'YES (valid upper bound)' : 'NO (check needed)'}`);
+console.log(`    Model product >= observed mixed-pilot lower CI: ${fcrBoundA.bound * 100 >= conditionMetrics['A'].fcrCI.low ? 'YES' : 'NO'}`);
 
 // Condition D: LLM judge (tier_1)
 const fcrBoundD = egac.computeFCRBound(['tier_1']);
 console.log(`  Condition D: EGAC FCR bound (tier_1) = ${(fcrBoundD.bound * 100).toFixed(2)}%`);
-console.log(`    Empirical FCR = ${conditionMetrics.D ? conditionMetrics.D.fcr : 'N/A'}%`);
+console.log(`    Mixed-pilot FCR = ${conditionMetrics.D ? conditionMetrics.D.fcr : 'N/A'}%`);
 
 // Condition E/F/G: deterministic test (tier_2)
 const fcrBoundG = egac.computeFCRBound(['tier_2']);
 console.log(`  Condition G: EGAC FCR bound (tier_2) = ${(fcrBoundG.bound * 100).toFixed(2)}%`);
-console.log(`    Empirical FCR = ${conditionMetrics.G ? conditionMetrics.G.fcr : 'N/A'}%`);
-assert.strictEqual(fcrBoundG.bound, 0, 'EGAC must predict FCR = 0 for tier_2 (deterministic)');
+console.log(`    Mixed-pilot FCR = ${conditionMetrics.G ? conditionMetrics.G.fcr : 'N/A'}%`);
+assert.strictEqual(fcrBoundG.bound, 0, 'Configured tier_2 assumptions must produce model product 0');
 
-// ─── Validation 4: EGAC decision matches expected per condition ──────────────
+// ─── Check 4: advisory output behavior ──────────────
 
-console.log('\n--- Validation 4: EGAC Decision Matches Expected Behavior ---');
+console.log('\n--- Check 4: EGAC Advisory Output Behavior ---');
 
 // Condition A: self-assertion only -> should HALT
 const decisionA = egac.decide('Aftergraph/works-execution', [{ tier: 'tier_0', passed: true }], ['tier_0']);
 console.log(`  Condition A (self-assertion): decision = ${decisionA.decision}`);
 assert(
-  decisionA.decision !== 'AUTONOMOUS_EXECUTION',
+  decisionA.decision !== 'RECOMMEND_AUTOMATION',
   'Self-assertion must not permit autonomous execution'
 );
 
-// Condition G: deterministic test pass -> should be AUTONOMOUS
+// Condition G: configured deterministic-test PASS -> advisory automation recommendation
 const decisionG = egac.decide('Aftergraph/works-execution', [{ tier: 'tier_2', passed: true }], ['tier_2']);
 console.log(`  Condition G (deterministic PASS): decision = ${decisionG.decision}`);
-assert.strictEqual(decisionG.decision, 'AUTONOMOUS_EXECUTION');
+assert.strictEqual(decisionG.decision, 'RECOMMEND_AUTOMATION');
 
 // Condition G with FAIL -> should HALT
 const decisionGFail = egac.decide('Aftergraph/works-execution', [{ tier: 'tier_2', passed: false }], ['tier_2']);
 console.log(`  Condition G (deterministic FAIL): decision = ${decisionGFail.decision}`);
 assert.strictEqual(decisionGFail.decision, 'HALT_AND_ESCALATE');
 
-// ─── Validation 5: VSR improvement from A to G ───────────────────────────────
+// ─── Check 5: descriptive VSR difference ───────────────────────────────
 
-console.log('\n--- Validation 5: VSR Improvement (A vs G) ---');
+console.log('\n--- Check 5: Mixed-Pilot VSR Difference (A vs G) ---');
 
 const vsrA = conditionMetrics.A ? conditionMetrics.A.vsr : 0;
 const vsrG = conditionMetrics.G ? conditionMetrics.G.vsr : 0;
 const improvement = vsrG - vsrA;
-console.log(`  VSR(A) = ${vsrA}%, VSR(G) = ${vsrG}%, improvement = ${improvement >= 0 ? '+' : ''}${improvement.toFixed(2)}pp`);
+console.log(`  VSR(A) = ${vsrA}%, VSR(G) = ${vsrG}%, descriptive difference = ${improvement >= 0 ? '+' : ''}${improvement.toFixed(2)}pp`);
 
-// The key claim: evidence-gated verification never has lower VSR than baseline
-// (because it eliminates false completions, which inflate reported success but not verified success)
+// Model-only sanity check: the configured tier_2 miss-rate product is lower than tier_0.
+// This is not an inferential claim about live model performance.
 assert(
   fcrBoundG.bound < fcrBoundA.bound,
   'Evidence-gated FCR bound must be strictly lower than baseline'
 );
-console.log(`  PASS: FCR bound reduction: ${(fcrBoundA.bound * 100).toFixed(2)}% -> ${(fcrBoundG.bound * 100).toFixed(2)}%`);
+console.log(`  PASS: advisory model product reduction: ${(fcrBoundA.bound * 100).toFixed(2)}% -> ${(fcrBoundG.bound * 100).toFixed(2)}%`);
 
 // ─── Summary ─────────────────────────────────────────────────────────────────
 
 console.log('\n======================================================');
-console.log('  EGAC VALIDATION AGAINST STUDY-008 COMPLETE');
+console.log('  EGAC METHODOLOGICAL CHECK AGAINST STUDY-008 COMPLETE');
 console.log('======================================================');
 console.log('');
 console.log('Key findings:');
-console.log(`  1. Baseline FCR = ${baselineFCR}% (false completions confirmed in data)`);
-console.log(`  2. Evidence-gated FCR = 0% for E, F, G (provable by construction)`);
-console.log(`  3. EGAC FCR bound: tier_0=${(fcrBoundA.bound*100).toFixed(1)}%, tier_2=${(fcrBoundG.bound*100).toFixed(1)}%`);
-console.log(`  4. EGAC correctly predicts: self-assertion -> HALT, deterministic -> AUTONOMOUS`);
-console.log(`  5. VSR improvement A->G: ${improvement >= 0 ? '+' : ''}${improvement.toFixed(2)}pp`);
+console.log(`  1. Mixed-pilot baseline row FCR = ${baselineFCR}% (simulation-dominated fixture)`);
+console.log(`  2. Simulation-dominated E/F/G rows report FCR = 0%; this is not inferential live evidence`);
+console.log(`  3. EGAC advisory model product: tier_0=${(fcrBoundA.bound*100).toFixed(1)}%, tier_2=${(fcrBoundG.bound*100).toFixed(1)}%`);
+console.log(`  4. EGAC advisory output: self-assertion -> HALT, deterministic PASS -> RECOMMEND_AUTOMATION`);
+console.log(`  5. Mixed-pilot VSR descriptive difference A->G: ${improvement >= 0 ? '+' : ''}${improvement.toFixed(2)}pp`);
