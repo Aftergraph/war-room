@@ -16,14 +16,14 @@ import (
 
 func main() {
 	var (
-		current = flag.String("current", "", "current desktop version")
-		target  = flag.String("target", "", "target desktop version")
-		source  = flag.String("source-commit", "", "exact target source commit")
+		current  = flag.String("current", "", "current desktop version")
+		target   = flag.String("target", "", "target desktop version")
+		source   = flag.String("source-commit", "", "exact target source commit")
 		artifact = flag.String("artifact", "", "target Aftergraph-War-Room.exe")
-		keyID   = flag.String("key-id", "", "trusted release key id")
+		keyID    = flag.String("key-id", "", "trusted release key id")
 		stateMin = flag.Int("state-min", 1, "minimum supported state schema")
 		stateMax = flag.Int("state-max", 1, "maximum supported state schema")
-		out     = flag.String("out", "UPDATE-PLAN.json", "output update plan")
+		out      = flag.String("out", "UPDATE-PLAN.json", "output update plan")
 	)
 	flag.Parse()
 	if *current == "" || *target == "" || *source == "" || *artifact == "" || *keyID == "" {

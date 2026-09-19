@@ -83,7 +83,6 @@ func canonicalPayload(p Plan) ([]byte, error) {
 	return json.Marshal(p)
 }
 
-
 func SignPlan(p Plan, keyID string, privateKey ed25519.PrivateKey) (Plan, error) {
 	if len(privateKey) != ed25519.PrivateKeySize {
 		return p, errors.New("invalid ed25519 private key")
