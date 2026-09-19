@@ -202,9 +202,12 @@ def analyze(
     bad_liveness = nonlive_rows(samples)
     gaps = elapsed_gaps(samples)
     max_gap = max(gaps) if gaps else 0.0
+    observed_span = samples[-1].elapsed - samples[0].elapsed
 
     completeness = {
         "durationAtLeast2h": duration >= MIN_DURATION_SEC,
+        "observedSampleSpanAtLeast2h": observed_span >= MIN_DURATION_SEC,
+        "firstSampleNearStart": samples[0].elapsed <= EXPECTED_INTERVAL_SEC * MAX_GAP_MULTIPLIER,
         "receiptCollectionErrorsZero": receipt_errors == 0,
         "ndjsonErrorRowsZero": len(row_errors) == 0,
         "receiptSourceNonLiveSamplesZero": receipt_nonlive == 0,
@@ -243,6 +246,9 @@ def analyze(
         "validSamples": len(samples),
         "completeness": completeness,
         "evidenceComplete": evidence_complete,
+        "observedSampleSpanSec": observed_span,
+        "firstSampleElapsedSec": samples[0].elapsed,
+        "lastSampleElapsedSec": samples[-1].elapsed,
         "maxSampleGapSec": max_gap,
         "ndjsonErrorRows": row_errors,
         "recomputedNonLiveRows": bad_liveness[:50],
