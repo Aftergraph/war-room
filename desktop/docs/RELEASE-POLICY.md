@@ -53,6 +53,8 @@ The release build must use a Go version at or above `MIN_RELEASE_GO` and must no
 
 Desktop tags use `desktop-vMAJOR.MINOR.PATCH`, for example `desktop-v1.6.10`, to avoid ambiguity with the repository-root server line. A tag is created only after merge of the exact release commit.
 
+P0 risk closure is evaluated before tagging. A release-provenance risk may close once canonical merge + exact reviewed CI establish source identity; tag creation, release-workflow success, asset hashes, and delivered-state read-back remain separate mandatory release gates. This avoids a circular rule where the tag required to close a P0 would itself publish a release while that P0 was still open.
+
 ## Artifacts
 
 GitHub release assets should include:

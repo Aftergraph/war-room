@@ -107,8 +107,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "575eeb0b412d0fcbfe64ae0a58ae3c2e7a8ed3c148883bddaa273eeb120d1741",
-      "bytes": 4960
+      "sha256": "c2209d31ef29d41078608dd64414349a805008c40eada3189e08ede7d4aa4f41",
+      "bytes": 5265
     },
     {
       "path": "config/settings.example.json",
@@ -202,8 +202,8 @@
     },
     {
       "path": "docs/RELEASE-POLICY.md",
-      "sha256": "3dc44b9e4aea3e9468fdbea5f5801713c6ec4822187b50d582d796027f2abae1",
-      "bytes": 2765
+      "sha256": "1ecdfb11044b806db19ccc5545d34d9e42617e49583a980bcdd028bc80dfb27b",
+      "bytes": 3166
     },
     {
       "path": "docs/RESEARCH-BASIS.md",
@@ -272,8 +272,8 @@
     },
     {
       "path": "docs/WEAKNESSES-AND-RISK-REGISTER.md",
-      "sha256": "c1568bd4ecb9db13f4e08520f2ac7b4716a0cac81d784df8bce25921375d59ae",
-      "bytes": 4131
+      "sha256": "2aef823ed49f73f2e0ac1d84507185d271d8cb6b96afcec0866829c021dc2cab",
+      "bytes": 4433
     },
     {
       "path": "domains.go",
@@ -537,8 +537,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "sha256": "5a92105c2c41c29f0cbd8085e7b4d81ea2bc85b8919953fe593d00df0a0717d6",
-      "bytes": 3795
+      "sha256": "afefa14059e1f77e794e9a23cfd031d28d19ac7392478d0371e2850171c25d96",
+      "bytes": 4493
     },
     {
       "path": "web/app.js",
