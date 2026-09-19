@@ -15,7 +15,7 @@
 
 ### v1.6.12 secret-registry stabilization
 
-- `WR-SEC-003` central secret registry + regression corpus — **IMPLEMENTED / VERIFYING**; close after exact-head CI and canonical merge.
+- `WR-SEC-003` central secret registry + regression corpus — **CLOSED**: PR #11 exact head `a13a6d9b3d6b10fbbbaa14b7d8ddefddbff69ce2` and post-merge `main@a917cffd4a6cb56435cc936abfb624d02dd5a65c` both passed Desktop stabilization.
 
 ### v1.6.11 security stabilization
 
