@@ -2,7 +2,7 @@
   "schema": "aftergraph.war-room.desktop.build-manifest/2.0",
   "name": "Aftergraph War Room Desktop",
   "version": "1.6.12",
-  "generatedAt": "2026-09-19T07:46:56.720758+00:00",
+  "generatedAt": "2026-09-19T07:51:35.354193+00:00",
   "releaseType": "stabilization-officialization",
   "releaseStatus": "candidate",
   "sourceCommit": null,
@@ -278,8 +278,8 @@
     },
     {
       "path": "docs/WEAKNESSES-AND-RISK-REGISTER.md",
-      "sha256": "99cc436ff57de8790561b0797257751c2e975c026ff2867b07a2d3c6419eb2a6",
-      "bytes": 5505
+      "sha256": "4441c4442ff37baee397aab7a988defbc31794d6b0253429fd8318084c4cc834",
+      "bytes": 5566
     },
     {
       "path": "domains.go",
@@ -528,8 +528,8 @@
     },
     {
       "path": "TODOS.md",
-      "sha256": "8723364f02f0c2ba893581af47a23e460b68557d551606682c0fa173bbae18c1",
-      "bytes": 1697
+      "sha256": "d83eb512039f8092c43e4e4512a874ddef39ff954c297cae631fa7f54c2ed8f2",
+      "bytes": 1792
     },
     {
       "path": "typesafe_api.go",
@@ -558,8 +558,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "sha256": "9bff199d1badab6802ec4f2ea4c7e0326882509141891e0673e39b529771fffd",
-      "bytes": 9306
+      "sha256": "2ad226f988fb6b0b560e031b2657f3d8a677744023c441ba026555dce508ae92",
+      "bytes": 9549
     },
     {
       "path": "web/app.js",

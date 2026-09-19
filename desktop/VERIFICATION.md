@@ -12,7 +12,7 @@ This document distinguishes completed evidence from pending release gates. A mis
 - full `go test -count=1 ./...` — **PASS locally**
 - `go vet ./...` — **PASS locally**
 
-`WR-SEC-003` remains a closure candidate until Desktop stabilization is green on the final exact PR HEAD and the canonical merge completes without material redaction changes.
+`WR-SEC-003` is **CLOSED for v1.6.12**: PR #11 final HEAD `a13a6d9b3d6b10fbbbaa14b7d8ddefddbff69ce2` passed Desktop stabilization run `35430262886` on Linux and native Windows; it merged as `a917cffd4a6cb56435cc936abfb624d02dd5a65c`; post-merge canonical `main` then passed Desktop stabilization run `35430352696` on Linux and native Windows. No material redaction code changed between the verified PR head and merge.
 
 ## v1.6.11 loopback-boundary security evidence
 
