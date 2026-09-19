@@ -2,7 +2,7 @@
   "schema": "aftergraph.war-room.desktop.build-manifest/2.0",
   "name": "Aftergraph War Room Desktop",
   "version": "1.6.12",
-  "generatedAt": "2026-09-19T07:44:29.370009+00:00",
+  "generatedAt": "2026-09-19T07:46:56.720758+00:00",
   "releaseType": "stabilization-officialization",
   "releaseStatus": "candidate",
   "sourceCommit": null,
@@ -448,8 +448,8 @@
     },
     {
       "path": "secret_registry_test.go",
-      "sha256": "e788e8c1c75b32ef6d44c579637db50d2d8fb79b4ee3ff3ac82cdea1baa7d905",
-      "bytes": 2634
+      "sha256": "acdfc7ffda923871da8486977dd04706ccdd9b32ff3af7eb947c9b74c11aea14",
+      "bytes": 2664
     },
     {
       "path": "secrets_other.go",
