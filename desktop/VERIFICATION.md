@@ -1,4 +1,4 @@
-# AFTERGRAPH / WAR ROOM v1.6.11 — Verification
+# AFTERGRAPH / WAR ROOM v1.6.12 — Verification
 
 This document distinguishes completed evidence from pending release gates. A missing tool/result is never treated as PASS.
 
@@ -13,6 +13,18 @@ This document distinguishes completed evidence from pending release gates. A mis
 - `go vet ./...` — **PASS locally**
 
 `WR-SEC-003` is **CLOSED for v1.6.12**: PR #11 final HEAD `a13a6d9b3d6b10fbbbaa14b7d8ddefddbff69ce2` passed Desktop stabilization run `35430262886` on Linux and native Windows; it merged as `a917cffd4a6cb56435cc936abfb624d02dd5a65c`; post-merge canonical `main` then passed Desktop stabilization run `35430352696` on Linux and native Windows. No material redaction code changed between the verified PR head and merge.
+
+### v1.6.12 release-readiness evidence
+
+- canonical WR-SEC-003 closure merge — `2f418e6940a2d8385f0d11682d8015acf32b2a91`
+- closure post-merge Desktop stabilization — run `35430579387`, **PASS** on Linux + native Windows
+- exact post-closure native Windows smoke artifact — `7,982,592` bytes, SHA-256 `c4f3a82c8ae0a8046a81e0a5cb05c63081ec016439894d281ec851397d16c174`
+- native `/api/health` — **PASS**, `version=1.6.12`, `ok=true`, `go=go1.26.8`
+- authenticated native `/api/shutdown` — **PASS**, endpoint unreachable after shutdown
+- P0 register — **PASS**, no P0 item OPEN
+- deferred P1/P2 risks for release notes: `WR-QA-001`, `WR-A11Y-001`, `WR-REL-002`, `WR-REL-003`, `WR-A11Y-002`, plus accepted `WR-DATA-001` and permanent `WR-AUTH-001`
+
+The public release remains incomplete until the exact merged release-readiness commit is tagged, the tag-triggered release workflow passes, and the published assets/manifest are read back.
 
 ## v1.6.11 loopback-boundary security evidence
 
