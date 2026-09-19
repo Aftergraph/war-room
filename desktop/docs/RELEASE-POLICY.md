@@ -38,7 +38,8 @@ The PR description must name the exact compiler/tool versions and explicitly lis
 - deterministic UI QA when Playwright is available
 - Windows x64 test build
 - Windows GUI build
-- exact-binary `govulncheck`
+- exact-binary `govulncheck` for every shipped executable
+- governed-updater trust gate when an updater is shipped: compile-time public key present, matching CI signing key/key-id available, signed update plan generated, and the built updater verifies that plan/candidate before publication
 - reusable-secret scan
 - native Windows smoke (`/api/health` version + clean shutdown)
 - executable SHA-256 and package integrity
@@ -59,9 +60,26 @@ P0 risk closure is evaluated before tagging. A release-provenance risk may close
 
 GitHub release assets should include:
 - `Aftergraph-War-Room.exe`
+- `Aftergraph-War-Room-Updater.exe` when governed updater support is enabled
+- signed `UPDATE-PLAN.json` when governed updater support is enabled
 - release ZIP
 - `SHA256SUMS.txt`
 - `VERIFICATION.md`
 - `CHANGELOG.md`
 
 Compiled binaries are release assets, not source-tree commits.
+
+## Governed updater policy
+
+Updater trust is source-governed, not caller-provided. The updater binary must contain the approved public release key; runtime flags/files may not replace the production trust root.
+
+The official release environment may access the corresponding private Ed25519 key only through the protected `WAR_ROOM_UPDATE_SIGNING_KEY_B64` secret and `WAR_ROOM_UPDATE_SIGNING_KEY_ID` repository variable. Release CI must fail closed if either side of that trust relationship is missing or mismatched.
+
+Before publication, CI must:
+
+1. build and exact-binary scan both desktop and updater,
+2. sign the update plan against the exact release EXE/source commit,
+3. execute the updater's `--verify-only` mode against the signed plan and release EXE,
+4. include updater + signed update plan in release/package checksums.
+
+A production updater key change is a protected release/security change and requires normal exact-head review/gates.
