@@ -1,14 +1,14 @@
 {
   "schema": "aftergraph.war-room.desktop.build-manifest/2.0",
   "name": "Aftergraph War Room Desktop",
-  "version": "1.6.13",
-  "generatedAt": "2026-09-19T08:14:31.036752+00:00",
+  "version": "1.6.14",
+  "generatedAt": "2026-09-19T08:34:12.326679+00:00",
   "releaseType": "stabilization-officialization",
   "releaseStatus": "candidate",
   "sourceCommit": null,
   "coverageStatementPercent": 66.7,
   "toolchain": {
-    "go": "",
+    "go": "go1.26.8",
     "staticcheck": "",
     "govulncheck": ""
   },
@@ -58,7 +58,7 @@
     },
     {
       "path": "app.go",
-      "sha256": "ccd45b2fcb14935f5d26eea6e52a65f7ee5bade72549826bf087a57773995587",
+      "sha256": "cabd75d8f75431c59f2734b719e01aa9de133f4908e65875d9835cd79b0d1d2d",
       "bytes": 10781
     },
     {
@@ -103,8 +103,18 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "07fc566192f20ebc445dbe8ef1cf94ea8c73ad908d3068f18cb1480fe0e0006f",
-      "bytes": 8299
+      "sha256": "1bd10537a407ba44ebb9ebc2a8bfffc086279588ec74f447bd96cf44cee91ec0",
+      "bytes": 9746
+    },
+    {
+      "path": "cmd/war-room-update-plan/main.go",
+      "sha256": "80c743b257db7e358f049935f0607a7ac6bc115de228d9ca37e7bbafe03d3e53",
+      "bytes": 2377
+    },
+    {
+      "path": "cmd/war-room-updater/main.go",
+      "sha256": "52dc678b91da8cf2df5bc828dbf4a53505db52225463bcc98e53aff439a5065b",
+      "bytes": 2201
     },
     {
       "path": "config/settings.example.json",
@@ -153,8 +163,8 @@
     },
     {
       "path": "docs/CONFIGURATION.md",
-      "sha256": "65acb0ffad1f2e4f2449ec6bdb103216aa6fd86ac648d803a1b90ea961cffd8a",
-      "bytes": 4537
+      "sha256": "9a04733e879495311856e921556e50dd44c7824588b80207726fb90a60de5aea",
+      "bytes": 5446
     },
     {
       "path": "docs/CONVERSATIONAL-SHELL-v1.4.md",
@@ -198,8 +208,8 @@
     },
     {
       "path": "docs/RELEASE-POLICY.md",
-      "sha256": "1ecdfb11044b806db19ccc5545d34d9e42617e49583a980bcdd028bc80dfb27b",
-      "bytes": 3166
+      "sha256": "cd9d0944c59f27da7899d3860a59e0a536a02e75b4c978ce74fa35914e48ec36",
+      "bytes": 4522
     },
     {
       "path": "docs/REPRODUCIBILITY-v1.6.11.md",
@@ -267,6 +277,11 @@
       "bytes": 25370
     },
     {
+      "path": "docs/UPDATER-v1.6.14.md",
+      "sha256": "da7cf60630d749049dbc16c55c438d8372a228edcfac01bc20bcd4e953fd0a13",
+      "bytes": 4535
+    },
+    {
       "path": "docs/UX-RESEARCH-v1.1.md",
       "sha256": "148bcc5f0ed2c28bd67124f92c1e68dfd2f5ac2280a1bf0abbe1f57556380a59",
       "bytes": 5025
@@ -278,8 +293,8 @@
     },
     {
       "path": "docs/WEAKNESSES-AND-RISK-REGISTER.md",
-      "sha256": "4441c4442ff37baee397aab7a988defbc31794d6b0253429fd8318084c4cc834",
-      "bytes": 5566
+      "sha256": "0d3e52afe08de5db08ee4b72f03617a4b6003b7bd05d184e1d86ac768aed7be4",
+      "bytes": 6125
     },
     {
       "path": "domains.go",
@@ -367,6 +382,46 @@
       "bytes": 3387
     },
     {
+      "path": "internal/updater/apply.go",
+      "sha256": "4c5ba3202426a634d62bf64e6752721a44de58bcf59a0845a5a657ec6b5f4f0d",
+      "bytes": 4367
+    },
+    {
+      "path": "internal/updater/apply_test.go",
+      "sha256": "c78be9a565ffd37faab093fffc8b79e5e474565f3871ed29984759a25cb0b661",
+      "bytes": 4807
+    },
+    {
+      "path": "internal/updater/health.go",
+      "sha256": "0a01c7b3236277abb1333cd57bab0feeace4adbaf0b991b42b5f50ad5c3cf20d",
+      "bytes": 2867
+    },
+    {
+      "path": "internal/updater/manifest.go",
+      "sha256": "5cf1dc0fcda75c1ed3f5ba45bfb43c39cb6644b05f54fae98619a2f5f97298e8",
+      "bytes": 4751
+    },
+    {
+      "path": "internal/updater/manifest_test.go",
+      "sha256": "8f39ee1018811646a530632b3a590a485df1d85faf6af6d154dc745957379474",
+      "bytes": 2048
+    },
+    {
+      "path": "internal/updater/production_trust.go",
+      "sha256": "032dcab084a8ce1858a0caccc456f9350e8a1a87bac66e56e6e28da0b68c752c",
+      "bytes": 377
+    },
+    {
+      "path": "internal/updater/production_trust_test.go",
+      "sha256": "18bef2749dedbc696b0908f465396e492464500142dc2d7d25a4da93608faa9c",
+      "bytes": 990
+    },
+    {
+      "path": "internal/updater/state.go",
+      "sha256": "88b2c25045ecf9514587c41fe025cff97ec6b49433198b185a4e8bd8163fb10c",
+      "bytes": 2500
+    },
+    {
       "path": "LICENSE.txt",
       "sha256": "93ed50f059e2fd2d0505644f22c2baadb37322ce9d984a71fcf6499b9219379b",
       "bytes": 93
@@ -408,13 +463,13 @@
     },
     {
       "path": "qa/render_shell.py",
-      "sha256": "36a752b70651df27ae087ecbeaf5bdd9ac3d061ad2822941773e4d5d7677283c",
+      "sha256": "ac1b65cbab98d1eca84746a7e18068641efcbc25536af3594af76f4db9c1537e",
       "bytes": 28476
     },
     {
       "path": "README.md",
-      "sha256": "968c90d6b67ac60f1fcc1464698825666156195365f936ebab54af982e30ca99",
-      "bytes": 7536
+      "sha256": "65b75843ae225d1a8e701a9367ad71c9ab01bb5e2c7a2da27abbb4ebf0eb5f09",
+      "bytes": 7616
     },
     {
       "path": "route_contract_test.go",
@@ -428,8 +483,8 @@
     },
     {
       "path": "scripts/build-release.sh",
-      "sha256": "8ecb9c1777ea71938834549da39543a5eac3b424b4a4c700fb40d5d619f390a0",
-      "bytes": 2200
+      "sha256": "b40f6433d141ba25fba0192a2321f2809b7e603ba4fcfcb49b997fa68ab29b76",
+      "bytes": 2640
     },
     {
       "path": "scripts/generate-release-metadata.py",
@@ -528,8 +583,8 @@
     },
     {
       "path": "TODOS.md",
-      "sha256": "d83eb512039f8092c43e4e4512a874ddef39ff954c297cae631fa7f54c2ed8f2",
-      "bytes": 1792
+      "sha256": "cd56f3d93a35b8cdaf714170fbdc953705b4d8fe6bc9e11adf63608a0b312eab",
+      "bytes": 2399
     },
     {
       "path": "typesafe_api.go",
@@ -558,12 +613,12 @@
     },
     {
       "path": "VERIFICATION.md",
-      "sha256": "c5fa35e645d7c5d689ddffc800349333d6d74f2919f2e95171105d4c5f4dc1a6",
-      "bytes": 11609
+      "sha256": "9834519b8900b234b4a5afaa57dbcfdaf1cf884724bb8651c5943c8648914369",
+      "bytes": 13351
     },
     {
       "path": "web/app.js",
-      "sha256": "060808abbfd0dea88aada70c9286957cc0f4ac9484a0f071d464ae6d64883f1d",
+      "sha256": "8950868c8fe0d82a8c163621a2116eff2d7e17a9f214b84418608053fdd9442f",
       "bytes": 66511
     },
     {

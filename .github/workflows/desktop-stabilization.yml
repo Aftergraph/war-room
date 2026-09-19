@@ -74,9 +74,12 @@ jobs:
         run: |
           mkdir -p dist
           GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go test -c -o dist/warroom-desktop.test.exe .
-          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-H=windowsgui -s -w -X main.version=1.6.13" -o dist/Aftergraph-War-Room.exe .
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-H=windowsgui -s -w -X main.version=1.6.14" -o dist/Aftergraph-War-Room.exe .
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -o dist/Aftergraph-War-Room-Updater.exe ./cmd/war-room-updater
       - name: Exact binary vulnerability scan
-        run: govulncheck -mode=binary dist/Aftergraph-War-Room.exe
+        run: |
+          govulncheck -mode=binary dist/Aftergraph-War-Room.exe
+          govulncheck -mode=binary dist/Aftergraph-War-Room-Updater.exe
       - name: Reusable secret scan
         shell: bash
         run: |
@@ -119,14 +122,18 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          go build -trimpath -ldflags="-H=windowsgui -s -w -X main.version=1.6.13" -o dist/Aftergraph-War-Room.exe .
+          go build -trimpath -ldflags="-H=windowsgui -s -w -X main.version=1.6.14" -o dist/Aftergraph-War-Room.exe .
+          go build -trimpath -o dist/Aftergraph-War-Room-Updater.exe ./cmd/war-room-updater
           govulncheck -mode=binary dist/Aftergraph-War-Room.exe
+          govulncheck -mode=binary dist/Aftergraph-War-Room-Updater.exe
           Get-FileHash dist/Aftergraph-War-Room.exe -Algorithm SHA256
+          Get-FileHash dist/Aftergraph-War-Room-Updater.exe -Algorithm SHA256
       - uses: actions/upload-artifact@v4
         with:
           name: aftergraph-war-room-desktop-windows-x64
           path: |
             desktop/dist/Aftergraph-War-Room.exe
+            desktop/dist/Aftergraph-War-Room-Updater.exe
             desktop/CHANGELOG.md
             desktop/VERIFICATION.md
             desktop/docs/WEAKNESSES-AND-RISK-REGISTER.md

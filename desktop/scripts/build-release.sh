@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
-VERSION="${VERSION:-1.6.13}"
+VERSION="${VERSION:-1.6.14}"
 MIN_RELEASE_GO="${MIN_RELEASE_GO:-1.25.13}"
 mkdir -p dist
 
@@ -53,12 +53,18 @@ fi
 echo '[6/10] Windows cross-test binary'
 GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go test -c -o dist/warroom-desktop.test.exe .
 
-echo '[7/10] Windows GUI build'
+echo '[7/10] Windows GUI + updater build'
 GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-H=windowsgui -s -w -X main.version=${VERSION}" -o dist/Aftergraph-War-Room.exe .
+GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -o dist/Aftergraph-War-Room-Updater.exe ./cmd/war-room-updater
 file dist/Aftergraph-War-Room.exe
+file dist/Aftergraph-War-Room-Updater.exe
 
 echo '[8/10] binary vulnerability gate'
 govulncheck -mode=binary dist/Aftergraph-War-Room.exe
+govulncheck -mode=binary dist/Aftergraph-War-Room-Updater.exe
+if [ "${OFFICIAL_RELEASE:-0}" = "1" ]; then
+  WAR_ROOM_OFFICIAL_RELEASE=1 go test -run TestOfficialReleaseRequiresProductionUpdateTrust -count=1 ./internal/updater
+fi
 
 echo '[9/10] secret scan'
 if grep -RIE --exclude-dir=.git --exclude='*.exe' --exclude='*.zip' '(github_pat_[A-Za-z0-9_]+|ghp_[A-Za-z0-9]+|apikey_[A-Za-z0-9_]{24,})' .; then
@@ -67,4 +73,4 @@ if grep -RIE --exclude-dir=.git --exclude='*.exe' --exclude='*.zip' '(github_pat
 fi
 echo '[10/10] manifest + checksums'
 RELEASE_GATES_COMPLETE=1 python scripts/generate-release-metadata.py
-sha256sum dist/Aftergraph-War-Room.exe
+sha256sum dist/Aftergraph-War-Room.exe dist/Aftergraph-War-Room-Updater.exe

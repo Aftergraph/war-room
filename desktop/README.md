@@ -1,8 +1,8 @@
-# AFTERGRAPH / WAR ROOM Desktop v1.6.13
+# AFTERGRAPH / WAR ROOM Desktop v1.6.14
 
 Portable Windows x64 operator environment for **live, evidence-bounded Aftergraph system reality**.
 
-v1.6.13 is the **release portability hardening** line. It carries the v1.6.12 credential-registry runtime unchanged and adds canonical LF checkout semantics for release-critical metadata so Windows and Linux verify the same bytes. The desktop-v1.6.12 tag remains an immutable failed publication attempt; no v1.6.12 GitHub Release was published.
+v1.6.14 is the **governed updater foundation** line. It keeps v1.6.13 runtime authority unchanged while adding a fail-closed updater helper: signed update-plan verification, pinned production trust roots, state-schema preflight, state snapshot, atomic executable swap, native health smoke, and rollback on failed verification. Automatic updates remain disabled until an approved production release public key is provisioned.
 
 The desktop implementation lives under `desktop/` in the canonical `Aftergraph/war-room` repository. Local ZIPs and chat-generated binaries are evidence inputs only; GitHub merge/tag/release is the official distribution record. Current residual weaknesses are tracked in `docs/WEAKNESSES-AND-RISK-REGISTER.md`.
 

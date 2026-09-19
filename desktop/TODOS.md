@@ -11,7 +11,13 @@
 - >=2h native resource soak with GitHub + WORKS + Agent Bridge connected.
 - Narrator + NVDA empirical pass.
 - Authenticode signing.
-- governed updater + rollback.
+- governed updater + rollback — **IMPLEMENTED / BLOCKED**: v1.6.14 core complete; provision production update public key + CI signing secret/key-id, then verify signed-plan release and delivered rollback.
+
+### v1.6.14 governed updater
+
+- signed-plan verification, pinned trust, artifact verification, state preflight/snapshot, atomic swap, post-install native health smoke, and rollback path implemented.
+- release workflow builds/scans updater, signs `UPDATE-PLAN.json`, verifies it with the updater, and publishes updater + plan.
+- official release intentionally blocked until production update trust/signing material is provisioned.
 
 ### v1.6.12 secret-registry stabilization
 
