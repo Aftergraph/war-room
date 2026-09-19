@@ -1,0 +1,10 @@
+{
+  "schema": "aftergraph.war-room.desktop.update-trust/1.0",
+  "keys": [
+    {
+      "id": "aftergraph-desktop-release-REPLACE_ME",
+      "algorithm": "ed25519",
+      "publicKey": "REPLACE_WITH_BASE64_ED25519_PUBLIC_KEY"
+    }
+  ]
+}
