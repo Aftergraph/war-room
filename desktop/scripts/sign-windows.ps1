@@ -1,6 +1,5 @@
 param(
-    [Parameter(Mandatory = $true)]
-    [string[]] $Path,
+    [string[]] $Path = @(),
 
     [switch] $ValidateOnly
 )
@@ -42,6 +41,10 @@ if ($ValidateOnly) {
     [void][scriptblock]::Create((Get-Content -LiteralPath $PSCommandPath -Raw))
     Write-Host "Authenticode signing script syntax OK"
     exit 0
+}
+
+if ($Path.Count -eq 0) {
+    throw "at least one -Path is required for Authenticode signing"
 }
 
 $pfxBase64 = Require-Env "WAR_ROOM_AUTHENTICODE_PFX_B64"
