@@ -19,13 +19,13 @@ func TestCoreReadHandlersAndMethodContracts(t *testing.T) {
 	a.store.now = a.now
 	for _, path := range []string{"/api/health", "/api/diagnostics", "/api/agents", "/api/session"} {
 		rr := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet, path, nil)
+		req := loopbackTestRequest(http.MethodGet, path, nil)
 		a.routes().ServeHTTP(rr, req)
 		if rr.Code != 200 {
 			t.Fatalf("%s status=%d body=%s", path, rr.Code, rr.Body.String())
 		}
 		rr = httptest.NewRecorder()
-		req = httptest.NewRequest(http.MethodPatch, path, nil)
+		req = loopbackTestRequest(http.MethodPatch, path, nil)
 		a.routes().ServeHTTP(rr, req)
 		if rr.Code != http.StatusMethodNotAllowed {
 			t.Fatalf("%s patch=%d", path, rr.Code)
@@ -44,7 +44,7 @@ func TestAgentBridgeHeartbeatUsesInjectedClockAndStrictContract(t *testing.T) {
 	token := a.ensureAgentBridgeToken()
 	body := `{"contract":"aftergraph.agent.heartbeat/0.1","agent":{"id":"codex","name":"Codex","state":"running"}}`
 	rr := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/api/agents/heartbeat", strings.NewReader(body))
+	req := loopbackTestRequest(http.MethodPost, "/api/agents/heartbeat", strings.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+token)
 	a.routes().ServeHTTP(rr, req)
 	if rr.Code != 200 {
@@ -56,7 +56,7 @@ func TestAgentBridgeHeartbeatUsesInjectedClockAndStrictContract(t *testing.T) {
 	}
 
 	rr = httptest.NewRecorder()
-	req = httptest.NewRequest(http.MethodPost, "/api/agents/heartbeat", strings.NewReader(`{"contract":"bad","agent":{"id":"x"}}`))
+	req = loopbackTestRequest(http.MethodPost, "/api/agents/heartbeat", strings.NewReader(`{"contract":"bad","agent":{"id":"x"}}`))
 	req.Header.Set("Authorization", "Bearer "+token)
 	a.routes().ServeHTTP(rr, req)
 	if rr.Code != 400 {
@@ -77,11 +77,11 @@ func TestDecodeJSONRejectsUnknownAndTrailingValues(t *testing.T) {
 	var out struct {
 		Name string `json:"name"`
 	}
-	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"name":"ok","extra":1}`))
+	req := loopbackTestRequest(http.MethodPost, "/", bytes.NewBufferString(`{"name":"ok","extra":1}`))
 	if err := decodeJSON(req, &out); err == nil {
 		t.Fatal("expected unknown field rejection")
 	}
-	req = httptest.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"name":"ok"}{"name":"two"}`))
+	req = loopbackTestRequest(http.MethodPost, "/", bytes.NewBufferString(`{"name":"ok"}{"name":"two"}`))
 	if err := decodeJSON(req, &out); err == nil {
 		t.Fatal("expected trailing value rejection")
 	}

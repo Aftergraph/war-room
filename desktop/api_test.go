@@ -20,7 +20,7 @@ func testApp(t *testing.T) *App {
 
 func TestSummaryRouteReturnsBootstrapRealityAndSecurityHeaders(t *testing.T) {
 	a := testApp(t)
-	r := httptest.NewRequest(http.MethodGet, "/api/summary", nil)
+	r := loopbackTestRequest(http.MethodGet, "/api/summary", nil)
 	w := httptest.NewRecorder()
 	a.routes().ServeHTTP(w, r)
 	if w.Code != http.StatusOK {
@@ -48,7 +48,7 @@ func TestMutationRequiresPerRunSessionCapability(t *testing.T) {
 	a := testApp(t)
 	body := `{"name":"VSR","value":0.84,"unit":"ratio","domain":"Evidence & Verification","source":"test"}`
 
-	r := httptest.NewRequest(http.MethodPost, "/api/metrics", strings.NewReader(body))
+	r := loopbackTestRequest(http.MethodPost, "/api/metrics", strings.NewReader(body))
 	r.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	a.routes().ServeHTTP(w, r)
@@ -56,7 +56,7 @@ func TestMutationRequiresPerRunSessionCapability(t *testing.T) {
 		t.Fatalf("without capability status=%d want=403", w.Code)
 	}
 
-	r = httptest.NewRequest(http.MethodPost, "/api/metrics", strings.NewReader(body))
+	r = loopbackTestRequest(http.MethodPost, "/api/metrics", strings.NewReader(body))
 	r.Header.Set("Content-Type", "application/json")
 	r.Header.Set("X-WarRoom-Session", a.session)
 	w = httptest.NewRecorder()
@@ -71,7 +71,7 @@ func TestMutationRequiresPerRunSessionCapability(t *testing.T) {
 
 func TestIntelligenceSummaryAndFeedbackBoundary(t *testing.T) {
 	a := testApp(t)
-	r := httptest.NewRequest(http.MethodGet, "/api/intelligence", nil)
+	r := loopbackTestRequest(http.MethodGet, "/api/intelligence", nil)
 	w := httptest.NewRecorder()
 	a.routes().ServeHTTP(w, r)
 	if w.Code != http.StatusOK {
@@ -86,7 +86,7 @@ func TestIntelligenceSummaryAndFeedbackBoundary(t *testing.T) {
 	}
 
 	body := `{"candidateId":"oi_test","shouldHaveAttention":true,"features":{"ci_failure":1}}`
-	r = httptest.NewRequest(http.MethodPost, "/api/intelligence/feedback", strings.NewReader(body))
+	r = loopbackTestRequest(http.MethodPost, "/api/intelligence/feedback", strings.NewReader(body))
 	r.Header.Set("Content-Type", "application/json")
 	w = httptest.NewRecorder()
 	a.routes().ServeHTTP(w, r)
@@ -94,7 +94,7 @@ func TestIntelligenceSummaryAndFeedbackBoundary(t *testing.T) {
 		t.Fatalf("feedback without capability status=%d want=403", w.Code)
 	}
 
-	r = httptest.NewRequest(http.MethodPost, "/api/intelligence/feedback", strings.NewReader(body))
+	r = loopbackTestRequest(http.MethodPost, "/api/intelligence/feedback", strings.NewReader(body))
 	r.Header.Set("Content-Type", "application/json")
 	r.Header.Set("X-WarRoom-Session", a.session)
 	w = httptest.NewRecorder()

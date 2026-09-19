@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"sync"
 	"testing"
@@ -85,7 +84,7 @@ func TestWaitContextCancelsPromptly(t *testing.T) {
 }
 
 func TestDecodeJSONRejectsTrailingValues(t *testing.T) {
-	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{"value":1} {"value":2}`))
+	req := loopbackTestRequest(http.MethodPost, "/", strings.NewReader(`{"value":1} {"value":2}`))
 	var dst struct {
 		Value int `json:"value"`
 	}

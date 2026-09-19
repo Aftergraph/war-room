@@ -12,7 +12,7 @@ import (
 func TestAssistantGroundsAgentQueryInObservedSessions(t *testing.T) {
 	a := testApp(t)
 	_ = a.upsertAgent(AgentSession{ID: "works:w1", Name: "WORKS worker", Kind: "worker", Provider: "WORKS", State: "running", CurrentAction: "wrk_123", LastHeartbeat: time.Now().UTC(), Source: "test"})
-	r := httptest.NewRequest(http.MethodPost, "/api/assistant/query", strings.NewReader(`{"query":"what are the agents doing?"}`))
+	r := loopbackTestRequest(http.MethodPost, "/api/assistant/query", strings.NewReader(`{"query":"what are the agents doing?"}`))
 	r.Header.Set("X-WarRoom-Session", a.session)
 	r.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -36,7 +36,7 @@ func TestAssistantGroundsAgentQueryInObservedSessions(t *testing.T) {
 
 func TestAssistantSpecificRepoBeatsGenericRepoListing(t *testing.T) {
 	a := testApp(t)
-	r := httptest.NewRequest(http.MethodPost, "/api/assistant/query", strings.NewReader(`{"query":"tell me about runtime repo"}`))
+	r := loopbackTestRequest(http.MethodPost, "/api/assistant/query", strings.NewReader(`{"query":"tell me about runtime repo"}`))
 	r.Header.Set("X-WarRoom-Session", a.session)
 	r.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()

@@ -13,7 +13,7 @@ func TestAgentBridgeHeartbeatAndStaleProjection(t *testing.T) {
 	a := testApp(t)
 	token := a.ensureAgentBridgeToken()
 	body := `{"contract":"aftergraph.agent.heartbeat/0.1","agent":{"id":"hermes:vds","name":"Hermes VDS","kind":"agent","provider":"Hermes","state":"running","currentAction":"review governance","repo":"after-graph-governance"}}`
-	r := httptest.NewRequest(http.MethodPost, "/api/agents/heartbeat", strings.NewReader(body))
+	r := loopbackTestRequest(http.MethodPost, "/api/agents/heartbeat", strings.NewReader(body))
 	r.Header.Set("Authorization", "Bearer "+token)
 	r.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -55,7 +55,7 @@ func TestWorksFramesProjectRunnerAndWorkEvent(t *testing.T) {
 
 func TestAgentBridgeRejectsWrongToken(t *testing.T) {
 	a := testApp(t)
-	r := httptest.NewRequest(http.MethodPost, "/api/agents/heartbeat", strings.NewReader(`{"agent":{"id":"x"}}`))
+	r := loopbackTestRequest(http.MethodPost, "/api/agents/heartbeat", strings.NewReader(`{"agent":{"id":"x"}}`))
 	r.Header.Set("Authorization", "Bearer wrong")
 	w := httptest.NewRecorder()
 	a.routes().ServeHTTP(w, r)
@@ -67,7 +67,7 @@ func TestAgentBridgeRejectsWrongToken(t *testing.T) {
 func TestAgentSnapshotRoute(t *testing.T) {
 	a := testApp(t)
 	_ = a.upsertAgent(AgentSession{ID: "codex:1", Name: "Codex", State: "waiting", LastHeartbeat: time.Now().UTC(), Source: "test"})
-	r := httptest.NewRequest(http.MethodGet, "/api/agents", nil)
+	r := loopbackTestRequest(http.MethodGet, "/api/agents", nil)
 	w := httptest.NewRecorder()
 	a.routes().ServeHTTP(w, r)
 	if w.Code != http.StatusOK {

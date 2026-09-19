@@ -12,9 +12,9 @@ func requestRoute(t *testing.T, a *App, method, path, body string, authorized bo
 	t.Helper()
 	var r *http.Request
 	if body == "" {
-		r = httptest.NewRequest(method, path, nil)
+		r = loopbackTestRequest(method, path, nil)
 	} else {
-		r = httptest.NewRequest(method, path, strings.NewReader(body))
+		r = loopbackTestRequest(method, path, strings.NewReader(body))
 		r.Header.Set("Content-Type", "application/json")
 	}
 	if authorized {

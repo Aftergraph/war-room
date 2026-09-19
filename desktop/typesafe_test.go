@@ -62,7 +62,7 @@ func TestTypeSafeEvaluateRequiresSessionCapability(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequest(http.MethodPost, "/api/typesafe/evaluate", nil)
+	req := loopbackTestRequest(http.MethodPost, "/api/typesafe/evaluate", nil)
 	rr := httptest.NewRecorder()
 	app.routes().ServeHTTP(rr, req)
 	if rr.Code != http.StatusForbidden {
