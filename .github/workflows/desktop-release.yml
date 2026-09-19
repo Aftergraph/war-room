@@ -85,13 +85,11 @@ jobs:
           Copy-Item dist/UPDATE-PLAN.json $stage/
           Copy-Item CHANGELOG.md,VERIFICATION.md,README.md,LICENSE.txt $stage/
           Copy-Item docs/WEAKNESSES-AND-RISK-REGISTER.md $stage/
-          Copy-Item BUILD-MANIFEST.json,SHA256SUMS.txt $stage/
-          $hash = (Get-FileHash dist/Aftergraph-War-Room.exe -Algorithm SHA256).Hash.ToLower()
           $updaterHash = (Get-FileHash dist/Aftergraph-War-Room-Updater.exe -Algorithm SHA256).Hash.ToLower()
           $planHash = (Get-FileHash dist/UPDATE-PLAN.json -Algorithm SHA256).Hash.ToLower()
-          "$hash  Aftergraph-War-Room.exe" | Add-Content "$stage/SHA256SUMS.txt"
-          "$updaterHash  Aftergraph-War-Room-Updater.exe" | Add-Content "$stage/SHA256SUMS.txt"
-          "$planHash  UPDATE-PLAN.json" | Add-Content "$stage/SHA256SUMS.txt"
+          $extraSums = "$updaterHash  dist/Aftergraph-War-Room-Updater.exe`n$planHash  dist/UPDATE-PLAN.json`n"
+          [System.IO.File]::AppendAllText((Resolve-Path SHA256SUMS.txt), $extraSums, [System.Text.UTF8Encoding]::new($false))
+          Copy-Item BUILD-MANIFEST.json,SHA256SUMS.txt $stage/
           Compress-Archive -Path "$stage/*" -DestinationPath "dist/Aftergraph-War-Room-$version-Windows-x64.zip" -Force
           Get-FileHash "dist/Aftergraph-War-Room-$version-Windows-x64.zip" -Algorithm SHA256 | Format-List
       - name: Publish GitHub Release
