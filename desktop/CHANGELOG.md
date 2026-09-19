@@ -4,7 +4,22 @@ All notable changes to the AFTERGRAPH / WAR ROOM Desktop line are recorded here.
 
 The format follows Keep a Changelog conventions and semantic versioning. A version is not considered released until its exact source commit, native Windows build, verification record, executable SHA-256, and release notes are published together.
 
-## [1.6.13] - Unreleased
+## [1.6.14] - Unreleased
+
+### Added
+- Governed updater foundation with Ed25519-signed update plans, compile-time pinned production trust roots, artifact hash/size verification, state-schema compatibility preflight, state snapshot, atomic executable swap, native health smoke, and automatic executable rollback after failed verification.
+- CI-only `war-room-update-plan` signer; private signing material is consumed only from the official release environment.
+- `war-room-updater --verify-only` release gate so the published updater validates the signed plan against the same pinned trust root before publication.
+
+### Security
+- Caller-supplied trust stores are deliberately unsupported. A caller cannot replace the updater trust root at runtime.
+- Official release is fail-closed while the production update public key is unprovisioned; release CI also requires the corresponding private signing key and key id.
+- Stabilization CI builds and exact-binary scans both the desktop app and updater helper.
+
+### Release status
+- v1.6.14 is a candidate line only. `WR-REL-003` remains blocked on production signing/trust provisioning and an official signed-plan delivered-state verification.
+
+## [1.6.13] - 2026-09-19
 
 ### Fixed
 - Added repository `.gitattributes` rules that force LF checkout semantics for `BUILD-MANIFEST.json`, `SHA256SUMS.txt`, and release metadata Python scripts across Windows/Linux.
@@ -13,6 +28,7 @@ The format follows Keep a Changelog conventions and semantic versioning. A versi
 ### Release provenance
 - `desktop-v1.6.12` remains immutably bound to `14ac599a87f5aca1ab434c1633695237722a2814`, but release run `35430873251` failed before build/publication because Windows checkout converted `BUILD-MANIFEST.json` to CRLF. No v1.6.12 GitHub Release assets were published.
 - v1.6.13 supersedes that failed publication attempt while preserving the v1.6.12 tag as historical evidence.
+- v1.6.13 was subsequently released from exact source commit `20106f8885175a2f006e21a476da4bf867ac4ddd`; tag-triggered release run `35431659577` passed and public asset read-back matched the release manifest. The release carries `RELEASE-RECEIPT-v1.6.13.md`.
 
 ## [1.6.12] - 2026-09-19
 
