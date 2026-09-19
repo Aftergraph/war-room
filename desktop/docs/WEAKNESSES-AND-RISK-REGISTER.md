@@ -1,0 +1,22 @@
+# AFTERGRAPH / WAR ROOM Desktop — Weakness & Risk Register
+
+This register is release evidence, not marketing copy. A weakness is closed only by code/evidence that satisfies the listed exit criterion. Missing evidence remains open.
+
+| ID | Severity | Weakness / uncertainty | Current control | Exit criterion | Status |
+|---|---|---|---|---|---|
+| WR-SEC-001 | P0 | v1.6.9 exact Windows binary used Go 1.23.2; `govulncheck` later reported 53 reachable standard-library vulnerabilities. | v1.6.10 release script requires Go >=1.25.13 and exact-binary `govulncheck`. | Exact v1.6.10 release EXE built with patched Go and `govulncheck -mode=binary` exits 0; compiler version recorded in release evidence. | **CLOSED in v1.6.10 candidate** — Go 1.26.8, `govulncheck` exit 0 |
+| WR-REL-001 | P0 | Desktop source historically existed outside canonical GitHub history, creating provenance drift risk. | Officialization PR places the desktop tree under canonical `Aftergraph/war-room/desktop`. | Merged commit on canonical repo + release tag points to exact reviewed source. | OPEN |
+| WR-QA-001 | P1 | Native UI soak is short; no multi-hour resource run with all external connectors active. | Deterministic headless tests + bounded native Windows samples + page-level soak. | >=2h native soak with GitHub + WORKS + Agent Bridge active; no monotonic leak or runaway reconnect/resource growth. | OPEN |
+| WR-A11Y-001 | P1 | Narrator/NVDA behavior has not been empirically signed off on target Windows hardware. | Keyboard/focus/ARIA automated contracts and forced-colors CSS policy. | Recorded Narrator and NVDA pass for palette, drawer, topology, status changes, assistant objects. | OPEN |
+| WR-A11Y-002 | P2 | No physical touchscreen/digitizer is present on the current Lenovo target, so real touch evidence is unavailable. | Coarse-pointer CSS and non-drag keyboard controls. | Physical touch-hardware validation or documented supported-device exception. | OPEN |
+| WR-SEC-002 | P1 | Loopback session token protects mutation APIs but is a local-user/process boundary, not a multi-user authentication system. | Bind to `127.0.0.1`; ephemeral `X-WarRoom-Session`; secrets stay server-side. | Add and verify Host/Origin policy + explicit local threat-model tests, or formally accept the single-user desktop boundary. | OPEN |
+| WR-SEC-003 | P2 | Log redaction is pattern-based and cannot prove coverage for future secret formats. | Bounded rotating logs + known token/API-key redaction tests. | Central secret type registry + regression corpus covering every supported credential format. | OPEN |
+| WR-REL-002 | P1 | Windows executable is not Authenticode-signed. | SHA-256 manifest and source-to-binary gates. | Sign release with controlled certificate and verify signature in CI/release evidence. | OPEN |
+| WR-REL-003 | P1 | No governed updater/rollback mechanism. | Portable release can be replaced manually; state format is versioned. | Signed updater with rollback, migration preflight, and failed-update recovery test. | OPEN |
+| WR-REL-004 | P2 | Bit-for-bit reproducibility across independent Windows builders is not asserted. | `-trimpath`, fixed toolchain floor, exact source/hash evidence. | Two independent builders produce matching or explainably normalized artifacts with reproducibility report. | OPEN |
+| WR-DATA-001 | P2 | GitHub observation is near-live REST reconciliation, not a real-time event/webhook source. | UI labels provenance/freshness; snapshot/stale never claims live. | Add governed event source or keep near-live limitation explicit. | ACCEPTED LIMITATION |
+| WR-AUTH-001 | P2 | Assistant/Jev/War Room projections are not canonical authority or verification. | Product invariant and read-only/gated integrations. | Never close by UI inference; only canonical Runtime/WORKS/verification contracts can change authority boundary. | PERMANENT INVARIANT |
+
+## Release rule
+
+A P0 OPEN item blocks a public/current release. P1 may be deferred only when the release notes state the limitation and the residual risk is explicitly accepted. P2 is tracked but does not automatically block a stabilization release.

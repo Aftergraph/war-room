@@ -1,0 +1,7 @@
+dist/
+coverage.out
+*.log
+*.tmp
+*.zip
+*.exe
+.DS_Store

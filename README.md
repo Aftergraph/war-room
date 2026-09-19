@@ -262,3 +262,13 @@ Key research repos:
 
 ## License
 Internal Aftergraph Infrastructure — Governed by Aftergraph AIE Standards.
+
+---
+
+## Desktop operator client
+
+The Windows x64 operator client is maintained as an official component under [`desktop/`](desktop/README.md). It is a separate implementation surface from the repository-root Node control plane, not a replacement or competing source of truth.
+
+Desktop releases use the tag namespace `desktop-vX.Y.Z`. Release governance, configuration, verification evidence, known weaknesses, and security/toolchain gates are versioned with the desktop source. Compiled Windows binaries are published as GitHub Release assets rather than committed to the source tree.
+
+See [`desktop/docs/GITHUB-OFFICIALIZATION.md`](desktop/docs/GITHUB-OFFICIALIZATION.md) and [`desktop/docs/RELEASE-POLICY.md`](desktop/docs/RELEASE-POLICY.md).

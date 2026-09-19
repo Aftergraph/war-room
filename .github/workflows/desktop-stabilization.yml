@@ -1,0 +1,132 @@
+name: Desktop stabilization
+
+on:
+  pull_request:
+    paths:
+      - "desktop/**"
+      - ".github/workflows/desktop-stabilization.yml"
+      - ".github/CODEOWNERS"
+      - ".github/PULL_REQUEST_TEMPLATE/desktop-release.md"
+      - ".github/ISSUE_TEMPLATE/desktop-bug.yml"
+  push:
+    branches: [main]
+    paths:
+      - "desktop/**"
+      - ".github/workflows/desktop-stabilization.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-stabilization-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-gates:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.x"
+          cache-dependency-path: desktop/go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install release analyzers
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@v0.8.1
+          go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
+      - name: Release metadata
+        run: python scripts/verify-release-metadata.py
+      - name: Format gate
+        run: test -z "$(gofmt -l *.go)"
+      - name: Unit tests
+        run: go test -count=1 ./...
+      - name: Shuffle/repeat tests
+        run: go test -shuffle=on -count=10 ./...
+      - name: Race tests
+        run: go test -race -count=1 ./...
+      - name: Vet
+        run: go vet ./...
+      - name: Staticcheck
+        run: staticcheck ./...
+      - name: Frontend syntax
+        run: |
+          node --check web/app.js
+          node --check web/visual-engine.js
+          node --check web/spatial-engine.js
+          node --check web/icons.js
+      - name: Strict CSP source gate
+        run: |
+          if grep -RIn --include='*.html' --include='*.js' 'style="' web; then
+            echo "Inline style attribute found; strict CSP would block it"
+            exit 1
+          fi
+      - name: Windows cross-build
+        run: |
+          mkdir -p dist
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go test -c -o dist/warroom-desktop.test.exe .
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-H=windowsgui -s -w -X main.version=1.6.10" -o dist/Aftergraph-War-Room.exe .
+      - name: Exact binary vulnerability scan
+        run: govulncheck -mode=binary dist/Aftergraph-War-Room.exe
+      - name: Reusable secret scan
+        shell: bash
+        run: |
+          if grep -RIE --exclude-dir=.git --exclude='*.exe' --exclude='*.zip' '(github_pat_[A-Za-z0-9_]+|ghp_[A-Za-z0-9]+|apikey_[A-Za-z0-9_]{24,})' .; then
+            exit 1
+          fi
+      - name: SHA-256
+        run: sha256sum dist/Aftergraph-War-Room.exe
+
+  windows-native:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.x"
+          cache-dependency-path: desktop/go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install release analyzers
+        shell: pwsh
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@v0.8.1
+          go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
+      - name: Native source gates
+        shell: pwsh
+        run: |
+          python scripts/verify-release-metadata.py
+          go test -count=1 ./...
+          go vet ./...
+          staticcheck ./...
+      - name: Native Windows GUI build
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          go build -trimpath -ldflags="-H=windowsgui -s -w -X main.version=1.6.10" -o dist/Aftergraph-War-Room.exe .
+          govulncheck -mode=binary dist/Aftergraph-War-Room.exe
+          Get-FileHash dist/Aftergraph-War-Room.exe -Algorithm SHA256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aftergraph-war-room-desktop-windows-x64
+          path: |
+            desktop/dist/Aftergraph-War-Room.exe
+            desktop/CHANGELOG.md
+            desktop/VERIFICATION.md
+            desktop/docs/WEAKNESSES-AND-RISK-REGISTER.md

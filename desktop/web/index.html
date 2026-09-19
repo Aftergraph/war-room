@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en" data-motion="auto" data-transparency="regular" data-cvd="none">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="theme-color" content="#080C14" />
+<title>AFTERGRAPH / WAR ROOM</title>
+<link rel="icon" type="image/png" href="icon.png" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app-shell" id="appShell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand-row">
+      <button class="mark-button" id="sidebarToggle" aria-label="Toggle sidebar">
+        <svg class="mark" viewBox="0 0 256 256" aria-hidden="true"><path d="M128 24 L218 76 L218 180 L128 232 L38 180 L38 76 Z"/><path class="inner" d="M78 92 L128 62 L178 92 L178 164 L128 194 L78 164 Z M128 62 L128 194"/><circle cx="128" cy="62" r="10"/><circle cx="78" cy="92" r="10"/><circle cx="178" cy="92" r="10"/><circle cx="78" cy="164" r="10"/><circle cx="178" cy="164" r="10"/><circle cx="128" cy="194" r="10"/><path class="kernel" d="M128 101 L155 128 L128 155 L101 128 Z"/></svg>
+      </button>
+      <div class="brand-copy"><strong>Aftergraph</strong><span>War Room</span></div>
+      <div class="live-pill" id="sidebarLive" aria-live="polite"><span class="presence reconnecting"></span><span>Connecting</span></div>
+    </div>
+
+    <button class="now-card active nav" data-view="overview" aria-current="page">
+      <span class="now-icon"><span class="presence"></span></span>
+      <span class="now-copy"><b>Now</b><small id="sidebarNow">Loading system reality…</small></span>
+      <span class="kbd">1</span>
+    </button>
+
+    <div class="nav-group">
+      <div class="nav-label">Workspace</div>
+      <button class="nav-item nav" data-view="activity"><span class="nav-glyph" data-icon="activity" data-icon-size="14"></span><span>Activity</span><span id="navActivityCount" class="nav-meta">—</span></button>
+      <button class="nav-item nav" data-view="topology"><span class="nav-glyph" data-icon="network" data-icon-size="14"></span><span>Topology</span><span id="navTopologyState" class="nav-meta">—</span></button>
+      <button class="nav-item nav" data-view="agents"><span class="nav-glyph" data-icon="bot" data-icon-size="14"></span><span>Agents & workers</span><span id="navAgentCount" class="nav-meta">—</span></button>
+      <button class="nav-item nav" data-view="intelligence"><span class="nav-glyph" data-icon="brain" data-icon-size="14"></span><span>Intelligence</span><span id="navIntelligenceCount" class="nav-meta">—</span></button>
+      <button class="nav-item nav" data-view="domains"><span class="nav-glyph" data-icon="boxes" data-icon-size="14"></span><span>Systems</span><span id="navDomainCount" class="nav-meta">9</span></button>
+      <button class="nav-item nav" data-view="repositories"><span class="nav-glyph" data-icon="repo" data-icon-size="14"></span><span>Repositories</span><span id="navRepoCount" class="nav-meta">—</span></button>
+      <button class="nav-item nav" data-view="verification"><span class="nav-glyph" data-icon="check" data-icon-size="14"></span><span>Evidence</span><span id="navEvidenceCount" class="nav-meta">—</span></button>
+      <button class="nav-item nav" data-view="services"><span class="nav-glyph" data-icon="server" data-icon-size="14"></span><span>Services</span><span id="navServiceState" class="nav-meta">—</span></button>
+    </div>
+
+    <div class="nav-group domain-shortcuts" id="domainShortcuts">
+      <div class="nav-label">Domains</div>
+    </div>
+
+    <div class="sidebar-spacer"></div>
+    <div class="sidebar-footer">
+      <button class="nav-item nav" data-view="connections"><span class="nav-glyph" data-icon="settings" data-icon-size="14"></span><span>Connections</span><span id="connectionMini" class="connection-dot"></span></button>
+      <div class="runtime-row"><span id="connDot" class="connection-dot"></span><span id="connText">Starting…</span><span id="build">v1.6.0</span></div>
+    </div>
+  </aside>
+
+  <main class="workspace">
+    <header class="topbar">
+      <div class="topbar-title">
+        <button class="mobile-menu" id="mobileMenu" aria-label="Open navigation">☰</button>
+        <div><div class="breadcrumb" id="breadcrumb">AFTERGRAPH / WAR ROOM</div><h1 id="viewTitle">Now</h1></div>
+      </div>
+      <div class="topbar-actions">
+        <button id="commandBtn" class="command-trigger" data-sheen><span data-icon="search" data-icon-size="15"></span><span>Search or ask War Room</span><kbd>Ctrl K</kbd></button>
+        <button id="syncBtn" class="icon-action" aria-label="Sync GitHub" title="Sync GitHub" data-icon="refresh" data-icon-size="15"></button>
+        <button id="soundBtn" class="icon-action" aria-label="Toggle sound feedback" aria-pressed="false" title="Sound feedback off"></button>
+        <button id="visualBtn" class="icon-action visual-trigger" aria-label="Visual and accessibility controls" title="Visual controls" data-icon="sliders" data-icon-size="15"></button>
+        <button id="attentionBtn" class="attention-button" title="Needs You"><span data-icon="alert" data-icon-size="13"></span><span>Needs You</span><b id="needsCountTop">0</b></button>
+      </div>
+    </header>
+
+    <div id="banner" class="banner hidden" role="status"></div>
+
+    <section id="view-overview" class="view active conversation-view">
+      <div class="conversation-layout">
+        <section class="conversation-pane">
+          <header class="conversation-head">
+            <div class="agent-identity">
+              <div class="agent-avatar warroom-avatar" aria-hidden="true"><span></span><span></span></div>
+              <div><h2>Aftergraph Assistant</h2><p><span id="freshnessDot" class="presence"></span><span id="freshnessText">Observing</span> · Twin · Jev · GitHub · Agent Fabric</p></div>
+            </div>
+            <div class="conversation-head-actions"><span id="clock" class="conversation-clock">—</span><button class="icon-action" data-jump="services" aria-label="Open system runtime" data-icon="server" data-icon-size="15"></button></div>
+          </header>
+
+          <div class="conversation-scroll" id="conversationScroll">
+            <div class="message-row system-message-row">
+              <div class="message-avatar warroom-mini" aria-hidden="true"></div>
+              <div class="message-stack">
+                <div class="message-meta" id="briefMode">War Room · connecting</div>
+                <article class="system-brief living-surface" data-sheen>
+                  <canvas id="signalField" class="signal-field" aria-hidden="true"></canvas>
+                  <div class="pulse-vignette" aria-hidden="true"></div>
+                  <div class="brief-content">
+                    <h3 id="systemHeadline">Building current system picture…</h3>
+                    <p id="systemSummary">War Room only reports what connected sources can actually observe.</p>
+                    <small id="observedAt">—</small>
+                    <div id="pulseMetrics" class="pulse-metrics compact"></div>
+                  </div>
+                </article>
+              </div>
+            </div>
+
+            <section class="conversation-activity">
+              <div class="conversation-section-head"><span id="activityModeLabel">Observed activity</span><div class="segmented compact-segmented" id="overviewFilter"><button class="selected" data-filter="all">All</button><button data-filter="changes">Changes</button><button data-filter="ci">CI</button><button data-filter="agents">Agents</button></div></div>
+              <div id="liveFeed" class="timeline chat-timeline"></div>
+            </section>
+
+            <div id="queryThread" class="query-thread conversation-queries"></div>
+          </div>
+
+          <div class="composer-dock glass-control conversation-composer" data-sheen>
+            <form id="askForm" class="composer">
+              <button type="button" class="composer-plus" aria-label="Open command palette" id="composerPlus">+</button>
+              <input id="askInput" autocomplete="off" placeholder="Ask Aftergraph — GitHub, agents, twin, Jev, CI, systems, evidence…" />
+              <button type="submit" class="composer-send" aria-label="Send">↗</button>
+            </form>
+            <div class="quick-prompts">
+              <button data-prompt="What needs attention?">Needs attention</button>
+              <button data-prompt="What changed today?">Changed today</button>
+              <button data-prompt="Show failing CI">Failing CI</button>
+              <button data-prompt="Which agents and workers are active?">Agents</button>
+              <button data-prompt="What does Jev think right now?">Jev</button>
+            </div>
+          </div>
+        </section>
+
+        <aside class="context-column live-inspector" id="contextColumn">
+          <section class="context-card system-preview-card">
+            <div class="context-head"><div><span class="mini-label">SYSTEM VIEW</span><h3>System context</h3></div><button class="text-action" data-jump="services">Open</button></div>
+            <div id="liveContext" class="context-stack"></div>
+          </section>
+
+          <section class="context-card agent-fabric-card" id="agentFabricCard">
+            <div class="context-head"><div><span class="mini-label">LIVE EXECUTION PRESENCE</span><h3>Agents & workers</h3></div><button class="text-action" data-jump="agents">Open</button></div>
+            <div id="agentFabricMini" class="context-stack"><div class="empty-state compact"><b>No live agent heartbeat yet.</b><span>Agent Bridge and WORKS SSE are ready.</span></div></div>
+          </section>
+
+          <section class="context-card typesafe-card" id="typesafeCard">
+            <div class="context-head"><div><span class="mini-label">NATIVE SYSTEM ONE · TYPESAFE JEV</span><h3>Decision fabric</h3></div><span id="typesafeBadge" class="source-chip neutral">Not configured</span></div>
+            <p class="context-explainer">Typed, confidence-aware triage runs natively inside the control loop when system state changes. Jev can classify and score attention; Aftergraph still owns authority, execution and verification.</p>
+            <div id="typesafeDecision" class="typesafe-decision"><div class="empty-state compact"><b>No TypeSafe evaluation yet.</b><span>Connect Jev, then evaluate the current evidence snapshot.</span></div></div>
+            <button id="typesafeEvaluate" class="secondary-button typesafe-evaluate" disabled><span data-icon="sparkle" data-icon-size="14"></span> Evaluate now</button>
+          </section>
+
+          <section class="context-card attention-card">
+            <div class="context-head"><div><span class="mini-label">ATTENTION</span><h3>Needs You</h3></div><span class="count-bubble" id="needsCount">0</span></div>
+            <div id="attention" class="attention-list"></div>
+          </section>
+
+          <section class="context-card intelligence-card">
+            <div class="context-head"><div><span class="mini-label">OPERATIONAL INTELLIGENCE</span><h3>Next move</h3></div><button class="text-action" data-jump="intelligence">Open</button></div>
+            <div id="intelligenceTop" class="intelligence-top"></div>
+          </section>
+
+          <section class="context-card routine-card">
+            <div class="context-head"><div><span class="mini-label">ROUTINES</span><h3>Control loop</h3></div></div>
+            <div class="routine-list">
+              <button id="routineSync"><span id="routineSyncStatus" class="routine-status"></span><div><b>GitHub reconcile</b><small>Background + manual sync</small></div><span>↗</span></button>
+              <button id="routineProbe"><span class="routine-status"></span><div><b>Service probes</b><small>Observed HTTP surfaces</small></div><span>↗</span></button>
+              <button data-jump="intelligence"><span id="routineIntelStatus" class="routine-status"></span><div><b>Attention ranking</b><small>Evidence → rank → explain</small></div><span>↗</span></button>
+            </div>
+          </section>
+
+          <section class="context-card institution-card compact-institution">
+            <div class="context-head"><div><span class="mini-label">INSTITUTION LAYER</span><h3>Boundaries</h3></div></div>
+            <div class="institution-list">
+              <div><span>Identity</span><b id="instIdentity">Unobserved</b></div>
+              <div><span>Authority</span><b id="instAuthority">Local</b></div>
+              <div><span>Policy</span><b id="instPolicy">Fail-closed</b></div>
+              <div><span>Budgets</span><b id="instBudget">Unobserved</b></div>
+              <div><span>Evidence</span><b id="instEvidence">Partial</b></div>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </section>
+
+    <section id="view-activity" class="view content-view">
+      <div class="page-head"><div><span class="mini-label">TIMELINE</span><h2>Activity</h2><p>One chronological view of GitHub, CI and live agent/worker activity.</p></div><div class="segmented" id="activityFilter"><button class="selected" data-filter="all">All</button><button data-filter="commit">Commits</button><button data-filter="pull_request">PRs</button><button data-filter="issue">Issues</button><button data-filter="workflow">CI</button><button data-filter="agents">Agents</button></div></div>
+      <div class="split-layout"><article class="surface"><div id="activityFeed" class="timeline dense"></div></article><aside class="surface inspector"><div id="activityInspector" class="inspector-content"><div class="empty-illustration">↗</div><h3>Select an event</h3><p>Inspect provenance, repository, actor, exact SHA and source link without leaving the timeline.</p></div></aside></div>
+    </section>
+
+
+
+    <section id="view-topology" class="view content-view topology-view">
+      <div class="page-head topology-head"><div><span class="mini-label">REACTIVE DIGITAL TWIN · OBSERVED STATE</span><h2>System topology</h2><p>Spatial system reality with semantic zoom, causal/evidence flow, temporal filtering, focus continuity and provenance-aware inspection.</p></div><div class="topology-actions"><div class="segmented topology-horizon"><button class="selected" data-horizon="86400000">24h</button><button data-horizon="3600000">1h</button><button data-horizon="21600000">6h</button><button data-horizon="604800000">7d</button></div><button id="topologyHeat" class="secondary-button" aria-pressed="false">Heatmap</button><button id="topologyDiff" class="secondary-button" aria-pressed="false">Reality diff</button><button id="topologyZoomOut" class="secondary-button" aria-label="Zoom topology out">−</button><button id="topologyZoomIn" class="secondary-button" aria-label="Zoom topology in">+</button><button id="topologyFit" class="secondary-button">Fit</button></div></div>
+      <div class="topology-layout">
+        <article class="surface topology-stage living-surface" data-sheen>
+          <div class="topology-atmosphere" aria-hidden="true"></div>
+          <p id="topologyInstructions" class="sr-only">Interactive system topology. Tab to system objects. Press Enter or Space to inspect a focused object. When the graph canvas itself is focused, use arrow keys to pan, plus or minus to zoom, and Home or zero to fit all objects.</p>
+          <svg id="topologySvg" class="topology-svg" viewBox="0 0 1200 760" role="group" tabindex="0" aria-label="Interactive Aftergraph system topology" aria-describedby="topologyInstructions">
+            <defs>
+              <filter id="topologyGlow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <radialGradient id="topologyLens" cx="50%" cy="50%"><stop offset="0" stop-color="#42C7E8" stop-opacity=".08"/><stop offset="1" stop-color="#42C7E8" stop-opacity="0"/></radialGradient>
+            </defs>
+            <g id="topologyViewport"></g>
+          </svg>
+          <div class="topology-statusbar"><div id="topologyStats" class="topology-stats"></div><div class="topology-legend"><span><i class="teal"></i>verified/evidence</span><span><i class="cyan"></i>execution/control</span><span><i class="violet"></i>governance</span><span><i class="amber"></i>attention</span></div></div>
+        </article>
+        <aside class="surface topology-inspector" id="topologyInspector"><div class="empty-state"><b>Select a system object.</b><span>Inspect source, freshness, activity, CI and relationships without leaving the graph.</span></div></aside>
+      </div>
+      <div class="topology-footnote"><span>Wheel / + − = semantic zoom</span><span>Drag / arrow keys = pan</span><span>Home / 0 = fit</span><span>Enter / Space = inspect object</span><span>Motion is suppressed under reduced-motion or performance pressure</span></div>
+    </section>
+
+    <section id="view-agents" class="view content-view agents-view">
+      <div class="page-head"><div><span class="mini-label">AGENT FABRIC · OBSERVED PRESENCE</span><h2>Agents & workers</h2><p>Source-backed execution presence from Agent Bridge heartbeats and WORKS runner events. Stale sessions visibly decay instead of pretending to be online.</p></div><div class="agent-head-actions"><span id="agentObserved" class="source-chip neutral">Unobserved</span><button id="agentRefresh" class="secondary-button">Refresh</button></div></div>
+      <div id="agentStats" class="metric-grid agent-metrics"></div>
+      <div class="split-layout agent-split">
+        <article class="surface"><div class="surface-head"><div><h3>Execution roster</h3><p>Agents, deterministic workers and runners with heartbeat freshness, mission/work context and current action.</p></div><span id="agentRosterCount" class="source-chip">0 observed</span></div><div id="agentRoster" class="agent-roster"></div></article>
+        <aside class="surface inspector"><div class="surface-head"><div><h3>Sources</h3><p>Connections that are actually contributing live execution state.</p></div></div><div id="agentSources" class="status-list"></div><div class="surface-head agent-event-head"><div><h3>Agent activity</h3><p>Recent execution-state events.</p></div></div><div id="agentEvents" class="timeline dense agent-event-list"></div></aside>
+      </div>
+    </section>
+
+    <section id="view-intelligence" class="view content-view">
+      <div class="page-head"><div><span class="mini-label">ADAPTIVE RANKING · OBSERVATION ONLY</span><h2>Operational intelligence</h2><p>Fuse evidence into explainable attention candidates. The learner may re-rank work; it cannot grant authority, execute actions, or produce verification truth.</p></div><span id="intelligenceMode" class="source-chip neutral">prior-only</span></div>
+      <div class="intelligence-layout">
+        <article class="surface intelligence-main">
+          <div class="surface-head"><div><h3>What deserves attention next</h3><p>Ranked from source-backed system signals. Risk is an operational score, not a calibrated probability.</p></div><span id="intelligenceCount" class="source-chip neutral">0 candidates</span></div>
+          <div id="intelligenceCandidates" class="candidate-list"></div>
+        </article>
+        <aside class="intelligence-side">
+          <article class="surface"><div class="surface-head"><div><h3>Learning state</h3><p>Constrained online logistic ranker.</p></div></div><div id="intelligenceModel" class="model-panel"></div></article>
+          <article class="surface"><div class="surface-head"><div><h3>Domain frontier</h3><p>Highest current candidate score by domain.</p></div></div><div id="intelligenceDomains" class="domain-risk-list"></div></article>
+          <article class="surface"><div class="surface-head"><div><h3>Invariant boundary</h3><p>What this layer is not allowed to do.</p></div></div><div id="intelligenceGuardrails" class="guardrail-list"></div></article>
+        </aside>
+      </div>
+      <article class="surface disclosure intelligence-contract"><details><summary>Algorithm stack <span>v0.1</span></summary><pre>Observe → Normalize → Signal fusion → Risk ranking → Explain → Human feedback → Online weight update
+
+Safety boundary:
+ranking ≠ authority
+prediction ≠ evidence
+recommendation ≠ execution
+agent completion ≠ verified outcome</pre></details></article>
+    </section>
+
+    <section id="view-domains" class="view content-view">
+      <div class="page-head"><div><span class="mini-label">SYSTEM MAP</span><h2>Systems</h2><p>Nine operational domains. Health is inferred only from observed repository, CI and probe evidence.</p></div></div>
+      <div id="domainGrid" class="domain-grid"></div>
+    </section>
+
+    <section id="view-repositories" class="view content-view">
+      <div class="page-head"><div><span class="mini-label">SYSTEM REALITY</span><h2>Repositories</h2><p>The current organization inventory, with source provenance and freshness.</p></div><div class="table-controls"><input id="repoSearch" placeholder="Search repositories…"/><select id="repoDomainFilter"><option value="all">All domains</option></select></div></div>
+      <article class="surface table-surface"><div class="table-wrap"><table><thead><tr><th>Repository</th><th>Domain</th><th>Visibility</th><th>Last push</th><th>Issues</th><th>Evidence</th></tr></thead><tbody id="repoTable"></tbody></table></div></article>
+    </section>
+
+    <section id="view-verification" class="view content-view">
+      <div class="page-head"><div><span class="mini-label">EVIDENCE</span><h2>Verification</h2><p>Unknown stays unknown. No metric is rendered as zero unless zero was actually observed.</p></div></div>
+      <div id="researchKpis" class="metric-grid"></div>
+      <article class="surface"><div class="surface-head"><div><h3>Metric ledger</h3><p>Evidence-backed samples ingested into this local War Room.</p></div><span class="source-chip">Local evidence store</span></div><div class="table-wrap"><table><thead><tr><th>Metric</th><th>Value</th><th>Domain</th><th>Source</th><th>Observed</th><th>Evidence</th></tr></thead><tbody id="metricTable"></tbody></table></div></article>
+      <article class="surface disclosure"><details><summary>Metric ingestion contract <span>API</span></summary><pre>{
+  "name": "VSR",
+  "value": 0.84,
+  "unit": "ratio",
+  "domain": "Execution & Runtime",
+  "source": "MISSION-Bench",
+  "evidence": "receipt://…",
+  "observedAt": "2026-09-18T20:00:00Z"
+}</pre><p>POST to <code>/api/metrics</code>. Remote systems should bridge through authenticated local collectors rather than expose this loopback API.</p></details></article>
+    </section>
+
+    <section id="view-services" class="view content-view">
+      <div class="page-head"><div><span class="mini-label">RUNTIME</span><h2>Services & compute</h2><p>Surface availability and direct local-machine observations.</p></div><button id="probeBtn" class="secondary-button">Probe now</button></div>
+      <div class="split-layout service-split"><article class="surface"><div class="surface-head"><div><h3>Service surfaces</h3><p>HTTP observations. Availability is not equivalent to functional correctness.</p></div></div><div id="probeList" class="status-list"></div></article><article class="surface"><div class="surface-head"><div><h3>Local compute</h3><p id="hostSource">Waiting for host telemetry…</p></div></div><div id="hostTelemetry" class="host-grid"></div></article></div>
+      <article class="surface"><div class="surface-head"><div><h3>Execution fabric</h3><p>Agents and workers are projected only from heartbeats or WORKS events.</p></div><button class="text-action" data-jump="agents">Open Agents</button></div><div id="serviceAgentFabric" class="agent-fabric-service"></div></article>
+    </section>
+
+    <section id="view-connections" class="view content-view">
+      <div class="page-head"><div><span class="mini-label">CONNECTIONS</span><h2>Data sources</h2><p>Connect sources once; keep secrets outside the browser surface.</p></div></div>
+      <div class="split-layout connection-split">
+        <article class="surface"><div class="surface-head"><div><h3>GitHub</h3><p>Unlock private repositories, Actions, commits, pull requests and issues.</p></div><span id="githubBadge" class="source-chip neutral">Not configured</span></div><label class="field">Fine-grained personal access token<input id="githubToken" type="password" autocomplete="off" placeholder="github_pat_…" /></label><div class="button-row"><button id="saveGithub" class="primary-button">Validate & encrypt</button><button id="deleteGithub" class="secondary-button danger-text">Disconnect</button></div><div id="githubConnMsg" class="helper"></div></article>
+        <article class="surface"><div class="surface-head"><div><h3>Credential boundary</h3><p>Secrets stay below the operator surface.</p></div></div><div class="security-list"><div><span>DPAPI</span><b>Current-user encryption</b></div><div><span>Loopback</span><b>127.0.0.1 only</b></div><div><span>Mutations</span><b>Ephemeral session capability</b></div><div><span>GitHub</span><b>Read-only is sufficient</b></div></div></article>
+      </div>
+      <article class="surface typesafe-connection-surface"><div class="surface-head"><div><span class="mini-label">MACHINE-NATIVE DECISIONS</span><h3>TypeSafe AI / Jev</h3><p>Server-side structured decisions with Choice, Score and Noul. The key never enters the browser bundle.</p></div><span id="typesafeConnBadge" class="source-chip neutral">Not configured</span></div><div class="connection-inline"><label class="field">TypeSafe API key<input id="typesafeApiKey" type="password" autocomplete="off" placeholder="API key" /></label><div class="button-row"><button id="saveTypesafe" class="primary-button">Encrypt connection</button><button id="deleteTypesafe" class="secondary-button danger-text">Disconnect</button></div></div><div class="native-typesafe-settings"><label class="visual-field toggle-field"><span>Native auto-evaluation</span><input id="typesafeAuto" type="checkbox" checked/><small>Re-evaluate only when the observed system fingerprint changes or the interval expires.</small></label><label class="field">Minimum interval (seconds)<input id="typesafeInterval" type="number" min="60" value="300"/></label><label class="field">Daily call budget<input id="typesafeBudget" type="number" min="1" max="1000" value="60"/></label></div><div id="typesafeConnMsg" class="helper">Jev is a native decision primitive, not an authority source. The API key is encrypted below the browser surface.</div></article>
+      <div class="split-layout connection-split execution-connections">
+        <article class="surface"><div class="surface-head"><div><span class="mini-label">EXECUTION FABRIC</span><h3>WORKS live runner stream</h3><p>Read-only connection to the canonical WORKS <code>/v1/ui/events</code> SSE stream.</p></div><span id="worksBadge" class="source-chip neutral">Not configured</span></div><label class="field">WORKS base URL<input id="worksUrl" placeholder="https://works.example or http://127.0.0.1:…" /></label><label class="field">Bearer token (optional for public read-only UI)<input id="worksToken" type="password" autocomplete="off" placeholder="Bearer token" /></label><label class="visual-field toggle-field"><span>Enable live WORKS stream</span><input id="worksEnabled" type="checkbox"/><small>Consumes runner/work SSE events; never mutates WORKS.</small></label><div class="button-row"><button id="saveWorks" class="primary-button">Validate & connect</button><button id="deleteWorks" class="secondary-button danger-text">Disconnect</button></div><div id="worksConnMsg" class="helper"></div></article>
+        <article class="surface"><div class="surface-head"><div><span class="mini-label">GENERIC AGENT BRIDGE</span><h3>Hermes / Vibe / Codex / custom workers</h3><p>Heartbeat contract for agents that can reach this War Room loopback through a local/tunneled bridge.</p></div><span id="agentBridgeBadge" class="source-chip">Ready</span></div><div class="security-list"><div><span>Contract</span><b>aftergraph.agent.heartbeat/0.1</b></div><div><span>Heartbeat</span><b>/api/agents/heartbeat</b></div><div><span>Event</span><b>/api/agents/event</b></div><div><span>Auth</span><b>Bearer bridge token</b></div></div><div class="button-row"><button id="revealAgentToken" class="secondary-button">Reveal token</button><button id="rotateAgentToken" class="secondary-button danger-text">Rotate token</button></div><div id="agentTokenOut" class="secret-output hidden"></div></article>
+      </div>
+      <article class="surface assistant-connection-surface"><div class="surface-head"><div><span class="mini-label">NATIVE ASSISTANT</span><h3>Aftergraph Assistant</h3><p>Grounded core is always available. Optional local Ollama adds prose synthesis without moving system truth out of War Room.</p></div><span id="assistantBadge" class="source-chip">Grounded core</span></div><div class="settings-grid"><label class="visual-field toggle-field"><span>Use local model when available</span><input id="assistantLocalModel" type="checkbox" checked/><small>Fallback remains deterministic and source-bounded.</small></label><label class="field">Ollama URL<input id="assistantOllamaUrl" value="http://127.0.0.1:11434" /></label><label class="field">Preferred local model<input id="assistantModel" placeholder="auto-select first installed model" /></label></div><div id="assistantConnMsg" class="helper">Assistant can inspect GitHub, Agent Fabric, the digital twin, Jev, intelligence, services and evidence. It has no execution authority.</div></article>
+      <article class="surface"><div class="surface-head"><div><h3>Refresh policy</h3><p>War Room updates via background sync and server-sent events.</p></div><button id="saveSettings" class="secondary-button">Save</button></div><div class="settings-grid"><label class="field">GitHub organization<input id="orgInput" value="Aftergraph" /></label><label class="field">GitHub reconciliation (seconds)<input id="refreshInput" type="number" min="60" value="60" /></label><label class="field">Workflow repository cap<input id="workflowCap" type="number" min="1" max="60" value="33" /></label><label class="field">Agent stale threshold (seconds)<input id="agentStaleSeconds" type="number" min="15" max="3600" value="45" /></label></div></article>
+      <div class="exit-row"><button id="exitBtn" class="text-danger">Exit War Room</button></div>
+    </section>
+  </main>
+</div>
+
+<div id="palette" class="palette hidden" role="dialog" aria-modal="true" aria-label="War Room command palette">
+  <div class="palette-box glass-control" data-sheen>
+    <div class="palette-search"><span aria-hidden="true">⌕</span><input id="paletteInput" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="paletteResults" placeholder="Search views, repos, domains, or ask a question…" /></div>
+    <div id="paletteResults" class="palette-results" role="listbox" aria-label="War Room search results"></div>
+    <div class="palette-foot"><span>↑↓ navigate</span><span>Enter open</span><span>Esc close</span></div>
+  </div>
+</div>
+<div id="visualDrawer" class="visual-drawer hidden" role="dialog" aria-modal="true" aria-labelledby="visualTitle">
+  <div class="visual-sheet glass-control">
+    <div class="visual-sheet-head">
+      <div><span class="mini-label">LIVING SURFACE</span><h2 id="visualTitle">Visual & ergonomic controls</h2><p>Motion, material, sonic feedback, accessibility simulation and live frame diagnostics.</p></div>
+      <button id="visualClose" class="icon-action" aria-label="Close visual controls" data-icon="x" data-icon-size="16"></button>
+    </div>
+    <div class="visual-grid">
+      <label class="visual-field"><span>Motion profile</span><select id="visualMotion"><option value="auto">Follow system</option><option value="full">Full living motion</option><option value="reduce">Reduced motion</option></select><small>State-driven transforms and view transitions; no motion is required to understand state.</small></label>
+      <label class="visual-field"><span>Material profile</span><select id="visualTransparency"><option value="regular">Regular glass</option><option value="reduced">Reduced transparency</option></select><small>Glass is limited to controls/navigation. Data surfaces remain calm and legible.</small></label>
+      <label class="visual-field toggle-field"><span>Sonic feedback</span><input id="visualAudio" type="checkbox"/><small>Procedural Web Audio cues. Off by default; user gesture required.</small></label>
+      <label class="visual-field"><span>Color-vision simulation</span><select id="visualCvd"><option value="none">None</option><option value="protanopia">Protanopia preview</option><option value="deuteranopia">Deuteranopia preview</option><option value="tritanopia">Tritanopia preview</option></select><small>Diagnostic simulation only. Status meaning never depends on color alone.</small></label>
+    </div>
+    <div class="visual-diagnostics">
+      <section><div class="surface-head"><div><h3>WCAG 2.2 contrast math</h3><p>Canonical Aftergraph foregrounds against institution black.</p></div><span class="source-chip">runtime math</span></div><div id="contrastReport" class="contrast-report"></div></section>
+      <section><div class="surface-head"><div><h3>Frame cadence</h3><p>Measures requestAnimationFrame cadence on this display. This is an observation, not a guaranteed FPS claim.</p></div><button id="measurePerformance" class="secondary-button">Measure 120 frames</button></div><div id="visualPerformanceResult" class="performance-result">Not measured</div><div class="performance-budget"><span>120 Hz target budget</span><b>8.3 ms/frame</b><span>60 Hz budget</span><b>16.7 ms/frame</b></div></section>
+    </div>
+    <div class="visual-principles"><span>Depth communicates hierarchy.</span><span>Motion communicates state.</span><span>Glass belongs to controls, not every card.</span><span>Unknown never animates as success.</span></div>
+  </div>
+</div>
+
+<svg class="filter-defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <filter id="cvd-protanopia"><feColorMatrix type="matrix" values="0.56667 0.43333 0 0 0  0.55833 0.44167 0 0 0  0 0.24167 0.75833 0 0  0 0 0 1 0"/></filter>
+    <filter id="cvd-deuteranopia"><feColorMatrix type="matrix" values="0.625 0.375 0 0 0  0.7 0.3 0 0 0  0 0.3 0.7 0 0  0 0 0 1 0"/></filter>
+    <filter id="cvd-tritanopia"><feColorMatrix type="matrix" values="0.95 0.05 0 0 0  0 0.43333 0.56667 0 0  0 0.475 0.525 0 0  0 0 0 1 0"/></filter>
+  </defs>
+</svg>
+<script src="icons.js"></script>
+<script src="visual-engine.js"></script>
+<script src="spatial-engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
