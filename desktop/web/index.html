@@ -19,7 +19,7 @@
       <div class="live-pill" id="sidebarLive" aria-live="polite"><span class="presence reconnecting"></span><span>Connecting</span></div>
     </div>
 
-    <button class="now-card active nav" data-view="overview" aria-current="page">
+    <button class="now-card active nav" data-view="overview" aria-label="Now" aria-current="page">
       <span class="now-icon"><span class="presence"></span></span>
       <span class="now-copy"><b>Now</b><small id="sidebarNow">Loading system reality…</small></span>
       <span class="kbd">1</span>
@@ -27,14 +27,14 @@
 
     <div class="nav-group">
       <div class="nav-label">Workspace</div>
-      <button class="nav-item nav" data-view="activity"><span class="nav-glyph" data-icon="activity" data-icon-size="14"></span><span>Activity</span><span id="navActivityCount" class="nav-meta">—</span></button>
-      <button class="nav-item nav" data-view="topology"><span class="nav-glyph" data-icon="network" data-icon-size="14"></span><span>Topology</span><span id="navTopologyState" class="nav-meta">—</span></button>
-      <button class="nav-item nav" data-view="agents"><span class="nav-glyph" data-icon="bot" data-icon-size="14"></span><span>Agents & workers</span><span id="navAgentCount" class="nav-meta">—</span></button>
-      <button class="nav-item nav" data-view="intelligence"><span class="nav-glyph" data-icon="brain" data-icon-size="14"></span><span>Intelligence</span><span id="navIntelligenceCount" class="nav-meta">—</span></button>
-      <button class="nav-item nav" data-view="domains"><span class="nav-glyph" data-icon="boxes" data-icon-size="14"></span><span>Systems</span><span id="navDomainCount" class="nav-meta">9</span></button>
-      <button class="nav-item nav" data-view="repositories"><span class="nav-glyph" data-icon="repo" data-icon-size="14"></span><span>Repositories</span><span id="navRepoCount" class="nav-meta">—</span></button>
-      <button class="nav-item nav" data-view="verification"><span class="nav-glyph" data-icon="check" data-icon-size="14"></span><span>Evidence</span><span id="navEvidenceCount" class="nav-meta">—</span></button>
-      <button class="nav-item nav" data-view="services"><span class="nav-glyph" data-icon="server" data-icon-size="14"></span><span>Services</span><span id="navServiceState" class="nav-meta">—</span></button>
+      <button class="nav-item nav" data-view="activity" aria-label="Activity"><span class="nav-glyph" data-icon="activity" data-icon-size="14"></span><span>Activity</span><span id="navActivityCount" class="nav-meta">—</span></button>
+      <button class="nav-item nav" data-view="topology" aria-label="Topology"><span class="nav-glyph" data-icon="network" data-icon-size="14"></span><span>Topology</span><span id="navTopologyState" class="nav-meta">—</span></button>
+      <button class="nav-item nav" data-view="agents" aria-label="Agents &amp; workers"><span class="nav-glyph" data-icon="bot" data-icon-size="14"></span><span>Agents & workers</span><span id="navAgentCount" class="nav-meta">—</span></button>
+      <button class="nav-item nav" data-view="intelligence" aria-label="Intelligence"><span class="nav-glyph" data-icon="brain" data-icon-size="14"></span><span>Intelligence</span><span id="navIntelligenceCount" class="nav-meta">—</span></button>
+      <button class="nav-item nav" data-view="domains" aria-label="Systems"><span class="nav-glyph" data-icon="boxes" data-icon-size="14"></span><span>Systems</span><span id="navDomainCount" class="nav-meta">9</span></button>
+      <button class="nav-item nav" data-view="repositories" aria-label="Repositories"><span class="nav-glyph" data-icon="repo" data-icon-size="14"></span><span>Repositories</span><span id="navRepoCount" class="nav-meta">—</span></button>
+      <button class="nav-item nav" data-view="verification" aria-label="Evidence"><span class="nav-glyph" data-icon="check" data-icon-size="14"></span><span>Evidence</span><span id="navEvidenceCount" class="nav-meta">—</span></button>
+      <button class="nav-item nav" data-view="services" aria-label="Services"><span class="nav-glyph" data-icon="server" data-icon-size="14"></span><span>Services</span><span id="navServiceState" class="nav-meta">—</span></button>
     </div>
 
     <div class="nav-group domain-shortcuts" id="domainShortcuts">
@@ -43,7 +43,7 @@
 
     <div class="sidebar-spacer"></div>
     <div class="sidebar-footer">
-      <button class="nav-item nav" data-view="connections"><span class="nav-glyph" data-icon="settings" data-icon-size="14"></span><span>Connections</span><span id="connectionMini" class="connection-dot"></span></button>
+      <button class="nav-item nav" data-view="connections" aria-label="Connections"><span class="nav-glyph" data-icon="settings" data-icon-size="14"></span><span>Connections</span><span id="connectionMini" class="connection-dot"></span></button>
       <div class="runtime-row"><span id="connDot" class="connection-dot"></span><span id="connText">Starting…</span><span id="build">v1.6.0</span></div>
     </div>
   </aside>
@@ -55,7 +55,7 @@
         <div><div class="breadcrumb" id="breadcrumb">AFTERGRAPH / WAR ROOM</div><h1 id="viewTitle">Now</h1></div>
       </div>
       <div class="topbar-actions">
-        <button id="commandBtn" class="command-trigger" data-sheen><span data-icon="search" data-icon-size="15"></span><span>Search or ask War Room</span><kbd>Ctrl K</kbd></button>
+        <button id="commandBtn" class="command-trigger" aria-label="Search or ask War Room" data-sheen><span data-icon="search" data-icon-size="15"></span><span>Search or ask War Room</span><kbd>Ctrl K</kbd></button>
         <button id="syncBtn" class="icon-action" aria-label="Sync GitHub" title="Sync GitHub" data-icon="refresh" data-icon-size="15"></button>
         <button id="soundBtn" class="icon-action" aria-label="Toggle sound feedback" aria-pressed="false" title="Sound feedback off"></button>
         <button id="visualBtn" class="icon-action visual-trigger" aria-label="Visual and accessibility controls" title="Visual controls" data-icon="sliders" data-icon-size="15"></button>
