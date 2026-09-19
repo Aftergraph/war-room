@@ -1,6 +1,26 @@
-# AFTERGRAPH / WAR ROOM v1.6.10 — Verification
+# AFTERGRAPH / WAR ROOM v1.6.11 — Verification
 
 This document distinguishes completed evidence from pending release gates. A missing tool/result is never treated as PASS.
+
+## v1.6.11 loopback-boundary security evidence
+
+Implementation target: PR #7, `fix(desktop): harden loopback HTTP boundary`.
+
+- implementation HEAD `168bd28e5049d4cbc5a0d45732513e52e5ad001b` — **PASS** through `Desktop stabilization` run `35422788362`
+- Linux gates — **PASS**: release metadata, format, unit, shuffle/repeat, race, vet, `staticcheck`, frontend syntax, strict-CSP source gate, Windows cross-build, exact-binary `govulncheck`, reusable-secret scan, SHA-256
+- native Windows gates — **PASS**: source gates, Windows GUI build, exact-binary `govulncheck`, artifact upload
+- exact CI-produced v1.6.11 Windows EXE downloaded to the Lenovo target — **PASS**, `7,982,592` bytes, SHA-256 `d2cfac9cca8aef381b9450b228f7290ce8483c617af2deb57b3a4ef3e018f99c`
+- native `/api/health` — **PASS**, `version=1.6.11`, `ok=true`, `go=go1.26.8`
+- exact same-origin `Origin: http://127.0.0.1:<listener-port>` → **200**
+- DNS-rebinding Host → **403**
+- loopback Host without explicit port → **403**
+- hostile cross-site Origin → **403**
+- mismatched loopback Origin port → **403**
+- duplicate Origin headers → **403**
+- hostile Origin carrying a valid `X-WarRoom-Session` on a mutation route → **403**
+- authenticated native shutdown — **PASS**, Trust Gateway `job.stop` authorization obtained and endpoint became unreachable after shutdown
+
+These results satisfy the behavioral exit criterion for `WR-SEC-002`. The final PR-head documentation/manifest commit must still rerun the exact-HEAD stabilization workflow; material code changes invalidate this evidence.
 
 ## Source gates completed before GitHub officialization
 
@@ -61,13 +81,16 @@ Executed on the target Lenovo from the final source snapshot after the static-an
 - canonical source location — **PASS**: `Aftergraph/war-room/desktop`
 - P0 weakness register — **PASS for tagging precondition**: `WR-SEC-001` and `WR-REL-001` are closed; tag/release publication remains a separate mandatory release gate
 
-### Remaining official-release gates
+### Completed v1.6.10 release gates
 
-- `desktop-v1.6.10` tag — PENDING
-- tag-triggered `Desktop release` workflow on the exact tagged commit — PENDING
-- GitHub Release assets/checksums generated from the tagged commit — PENDING
-- delivered-state read-back: release asset inventory + hashes + manifest `sourceCommit` bound to the exact tag commit — PENDING
+- `desktop-v1.6.10` tag — **PASS**, exact source commit `fabcdd048dbf3e3f20267cc9b03df7b4112c4a7d`
+- tag-triggered `Desktop release` workflow — **PASS**, run `35422295555`
+- published release manifest — **PASS**, `releaseStatus=release`, `sourceCommit=fabcdd048dbf3e3f20267cc9b03df7b4112c4a7d`, Go `go1.26.8`, exact-binary `govulncheck=true`
+- published EXE — **PASS**, `7,980,544` bytes, SHA-256 `d4796a44eba6cc1e52886ef38b4ed1c51764574a83fa21df4035fda42f7c5b28`
+- published Windows ZIP — **PASS**, SHA-256 `bb673ad2658c4bd101a96302e8b0fee8743fbf76ef90af63ec74aed301130837`
+- delivered-state read-back — **PASS**: release assets were downloaded, ZIP expanded, standalone and packaged EXE hashes matched, packaged manifest matched the published manifest, and the manifest bound to the exact tag commit
+- immutable post-publication receipt — **PASS**: `RELEASE-RECEIPT-v1.6.10.md` attached to the GitHub Release
 
 ## UI evidence carried forward as baseline, not release proof
 
-The v1.6.9 exact binary on the target 120 Hz panel produced a 600-frame visible-page sample around 8.3 ms median / 8.4 ms p95 and approximately 120.48 Hz, with no >25 ms frame in the isolated rerun. A short page-level soak did not show monotonic JS-heap growth. These results are useful regression baselines but do not replace exact v1.6.10 native proof or the still-open multi-hour/Narrator/NVDA/touch items.
+The v1.6.9 exact binary on the target 120 Hz panel produced a 600-frame visible-page sample around 8.3 ms median / 8.4 ms p95 and approximately 120.48 Hz, with no >25 ms frame in the isolated rerun. A short page-level soak did not show monotonic JS-heap growth. These results remain useful regression baselines but do not replace the still-open multi-hour connected soak, Narrator/NVDA, or physical-touch evidence.
