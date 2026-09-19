@@ -1,0 +1,4 @@
+# Release-critical metadata must remain byte-stable across Windows/Linux checkouts.
+desktop/BUILD-MANIFEST.json text eol=lf
+desktop/SHA256SUMS.txt text eol=lf
+desktop/scripts/*.py text eol=lf

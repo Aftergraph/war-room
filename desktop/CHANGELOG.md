@@ -4,6 +4,16 @@ All notable changes to the AFTERGRAPH / WAR ROOM Desktop line are recorded here.
 
 The format follows Keep a Changelog conventions and semantic versioning. A version is not considered released until its exact source commit, native Windows build, verification record, executable SHA-256, and release notes are published together.
 
+## [1.6.13] - Unreleased
+
+### Fixed
+- Added repository `.gitattributes` rules that force LF checkout semantics for `BUILD-MANIFEST.json`, `SHA256SUMS.txt`, and release metadata Python scripts across Windows/Linux.
+- Advanced release/stabilization version fixtures to v1.6.13 without changing runtime authority or credential semantics.
+
+### Release provenance
+- `desktop-v1.6.12` remains immutably bound to `14ac599a87f5aca1ab434c1633695237722a2814`, but release run `35430873251` failed before build/publication because Windows checkout converted `BUILD-MANIFEST.json` to CRLF. No v1.6.12 GitHub Release assets were published.
+- v1.6.13 supersedes that failed publication attempt while preserving the v1.6.12 tag as historical evidence.
+
 ## [1.6.12] - 2026-09-19
 
 ### Security

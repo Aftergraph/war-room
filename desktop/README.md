@@ -1,8 +1,8 @@
-# AFTERGRAPH / WAR ROOM Desktop v1.6.12
+# AFTERGRAPH / WAR ROOM Desktop v1.6.13
 
 Portable Windows x64 operator environment for **live, evidence-bounded Aftergraph system reality**.
 
-v1.6.12 is the **credential redaction registry hardening** line. It builds on the released v1.6.11 loopback-boundary baseline and replaces ad-hoc log-secret regex ownership with one typed registry covering every production vault credential plus session/Bearer transport surfaces. New vault-backed credential keys fail regression coverage until registered.
+v1.6.13 is the **release portability hardening** line. It carries the v1.6.12 credential-registry runtime unchanged and adds canonical LF checkout semantics for release-critical metadata so Windows and Linux verify the same bytes. The desktop-v1.6.12 tag remains an immutable failed publication attempt; no v1.6.12 GitHub Release was published.
 
 The desktop implementation lives under `desktop/` in the canonical `Aftergraph/war-room` repository. Local ZIPs and chat-generated binaries are evidence inputs only; GitHub merge/tag/release is the official distribution record. Current residual weaknesses are tracked in `docs/WEAKNESSES-AND-RISK-REGISTER.md`.
 

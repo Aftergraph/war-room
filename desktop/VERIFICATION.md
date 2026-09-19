@@ -1,6 +1,18 @@
-# AFTERGRAPH / WAR ROOM v1.6.12 — Verification
+# AFTERGRAPH / WAR ROOM v1.6.13 — Verification
 
 This document distinguishes completed evidence from pending release gates. A missing tool/result is never treated as PASS.
+
+## v1.6.13 release portability evidence
+
+- parent release-ready source: `14ac599a87f5aca1ab434c1633695237722a2814`
+- historical tag `desktop-v1.6.12` remains on that exact commit
+- release run `35430873251` stopped at `Verify tag/version` with `BUILD-MANIFEST.json must use LF-only line endings`; build, package, and publish steps were skipped
+- no v1.6.12 GitHub Release was published by that run
+- v1.6.13 introduces `.gitattributes` to preserve LF bytes for release-critical metadata/scripts across Windows and Linux
+- runtime secret-registry and authority behavior are unchanged from the verified v1.6.12 implementation
+
+Release remains incomplete until v1.6.13 exact-head stabilization, canonical merge, post-merge stabilization, tag-triggered release, and asset read-back all pass.
+
 
 ## v1.6.12 secret-registry security evidence
 
