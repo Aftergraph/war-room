@@ -1,14 +1,14 @@
 {
   "schema": "aftergraph.war-room.desktop.build-manifest/2.0",
   "name": "Aftergraph War Room Desktop",
-  "version": "1.6.12",
-  "generatedAt": "2026-09-19T07:57:12.027582+00:00",
+  "version": "1.6.13",
+  "generatedAt": "2026-09-19T08:14:31.036752+00:00",
   "releaseType": "stabilization-officialization",
   "releaseStatus": "candidate",
   "sourceCommit": null,
   "coverageStatementPercent": 66.7,
   "toolchain": {
-    "go": "go1.26.8",
+    "go": "",
     "staticcheck": "",
     "govulncheck": ""
   },
@@ -58,7 +58,7 @@
     },
     {
       "path": "app.go",
-      "sha256": "a31c1d3909ce9018e290751d15a33dd9e2576be549c33e661dc37e252f44b173",
+      "sha256": "ccd45b2fcb14935f5d26eea6e52a65f7ee5bade72549826bf087a57773995587",
       "bytes": 10781
     },
     {
@@ -103,8 +103,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "3aedd3c5dba56c8dc36245f1e9ca71b7c0476ad28afe7601a097a21019965848",
-      "bytes": 7561
+      "sha256": "07fc566192f20ebc445dbe8ef1cf94ea8c73ad908d3068f18cb1480fe0e0006f",
+      "bytes": 8299
     },
     {
       "path": "config/settings.example.json",
@@ -408,13 +408,13 @@
     },
     {
       "path": "qa/render_shell.py",
-      "sha256": "a938de6714e9a6e34d99c66644a0223752f01449ededf6ae3c4bd0a5e285d47c",
+      "sha256": "36a752b70651df27ae087ecbeaf5bdd9ac3d061ad2822941773e4d5d7677283c",
       "bytes": 28476
     },
     {
       "path": "README.md",
-      "sha256": "d9516c27c4e56500f9925de424506361f3a613709dacb30e7953a11d612b3015",
-      "bytes": 7547
+      "sha256": "968c90d6b67ac60f1fcc1464698825666156195365f936ebab54af982e30ca99",
+      "bytes": 7536
     },
     {
       "path": "route_contract_test.go",
@@ -428,7 +428,7 @@
     },
     {
       "path": "scripts/build-release.sh",
-      "sha256": "a9f642ce18782536700b238af74634d14ece936dc79872409d79d0ec42dd9557",
+      "sha256": "8ecb9c1777ea71938834549da39543a5eac3b424b4a4c700fb40d5d619f390a0",
       "bytes": 2200
     },
     {
@@ -558,12 +558,12 @@
     },
     {
       "path": "VERIFICATION.md",
-      "sha256": "93a1513072e6ff11e379438e0c01dc8a9613b99043c9ded4ef71d5192d8321a5",
-      "bytes": 10496
+      "sha256": "c5fa35e645d7c5d689ddffc800349333d6d74f2919f2e95171105d4c5f4dc1a6",
+      "bytes": 11609
     },
     {
       "path": "web/app.js",
-      "sha256": "8948edd3a1449a53e9ee379ef9a78801d4d2b54d2a2e90a08947b838026dbe07",
+      "sha256": "060808abbfd0dea88aada70c9286957cc0f4ac9484a0f071d464ae6d64883f1d",
       "bytes": 66511
     },
     {
