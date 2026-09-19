@@ -9,7 +9,7 @@
 ## P1 — next stabilization versions
 
 - >=2h native resource soak with GitHub + WORKS + Agent Bridge connected.
-- Narrator + NVDA empirical pass.
+- Narrator + NVDA empirical pass — **PARTIAL**: palette and compact-navigation names exact-binary verified; remaining recorded drawer/topology/status/structured-assistant-object evidence still required.
 - Authenticode signing — **IMPLEMENTED / BLOCKED**: fail-closed release signer + ordering/verification gates are implemented; provision a controlled trusted production certificate, expected thumbprint and timestamp service, then verify an official signed release and delivered signatures.
 - governed updater + rollback — **IMPLEMENTED / BLOCKED**: v1.6.14 core complete; provision production update public key + CI signing secret/key-id, then verify signed-plan release and delivered rollback.
 

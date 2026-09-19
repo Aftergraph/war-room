@@ -2,6 +2,41 @@
 
 This document distinguishes completed evidence from pending release gates. A missing tool/result is never treated as PASS.
 
+## v1.6.14 target-Windows accessibility evidence
+
+Target: Lenovo Windows x64, 3200×2000 @ 120 Hz.
+
+### NVDA
+
+- portable NVDA `2026.1.1` launched with isolated configuration and add-ons disabled
+- empirical command-palette test found decorative `.pal-icon` glyphs included in option accessible names
+- PR #16 final HEAD `2721620b6f9e0a860a1718831061a43fde4e690b` passed Desktop stabilization run `35434559164`
+- PR #16 merged as `ac2e5260b71f00a013af772b72fa336c20ee9b3c`; post-merge run `35434644954` passed Linux + native Windows
+- exact post-merge Windows artifact SHA-256 `a4ad19ce4477cf294b1106fbd94bf0280b112051af7ea0fad6edaaaf6399e7f2`
+- NVDA retest announced the palette option cleanly as “Now Assistant, system pulse and live activity view” without the decorative glyph prefix — **PASS**
+
+### Narrator + Windows UI Automation
+
+- Narrator `10.0.26100.8941` running on target
+- Microsoft Windows App Development CLI `0.6.1.0` used to inspect the same live UI Automation tree consumed by Windows accessibility clients
+- pre-fix UIA sweep on the exact War Room window found exactly 11 unnamed interactive controls: the 10 compact primary navigation buttons plus `commandBtn`
+- PR #18 final HEAD `9580a86ff5f2c6d3469bb667b1ed5f25067ebeb2` passed Desktop stabilization run `35436031854`
+- PR #18 merged as `a8496d59cdea7d33be278712bd97739f3cab9077`; post-merge run `35436125747` passed Linux + native Windows
+- exact merged Windows artifact: `7,983,104` bytes, SHA-256 `fd37a0445ca2976d72cde43fb10c263e4e4c5b10f575431caf093c0154400cf2`
+- delivered-state UIA inspection with Narrator active confirmed explicit names for `Now`, `Activity`, `Topology`, `Agents & workers`, `Intelligence`, `Systems`, `Repositories`, `Evidence`, `Services`, `Connections`, and `Search or ask War Room` — **PASS**
+- the prior 11 unnamed controls are therefore closed by exact delivered-state evidence
+
+### Remaining WR-A11Y-001 evidence
+
+`WR-A11Y-001` remains **PARTIAL / OPEN**. The exit criterion still requires recorded screen-reader evidence for:
+
+- visual/accessibility drawer
+- topology interaction/instructions
+- status/live-region changes
+- structured assistant objects
+
+DOM/Playwright semantics alone are not substituted for the remaining Narrator/NVDA empirical evidence.
+
 ## v1.6.14 Authenticode candidate
 
 Implemented release controls:
