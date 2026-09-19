@@ -580,13 +580,22 @@ const server = http.createServer(async (req, res) => {
   }
 
   // --- 4. STATIC OPERATOR COCKPIT SERVING ---
-  let staticPath = decodeURIComponent(reqPath.split('?')[0]);
+  let staticPath;
+  try {
+    staticPath = decodeURIComponent(reqPath.split('?')[0]);
+  } catch (err) {
+    return sendJson(res, 400, { error: 'MALFORMED_URI' });
+  }
+  if (/[\u0000-\u001f]/.test(staticPath)) {
+    return sendJson(res, 400, { error: 'MALFORMED_URI' });
+  }
   if (staticPath === '/' || staticPath === '') staticPath = '/index.html';
 
   const filePath = path.join(ROOT_DIR, staticPath);
 
-  // Guard against path traversal
-  if (!filePath.startsWith(ROOT_DIR)) {
+  // Guard against path traversal (exact-path prefix; a raw string prefix would
+  // also admit sibling directories such as ROOT_DIR + '-evil')
+  if (filePath !== ROOT_DIR && !filePath.startsWith(ROOT_DIR + path.sep)) {
     res.writeHead(403);
     return res.end('Forbidden');
   }
