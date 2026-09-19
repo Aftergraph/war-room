@@ -64,3 +64,11 @@ Under `%LOCALAPPDATA%\Aftergraph\WarRoom\`:
 - `MIN_RELEASE_GO` — compiler floor; defaults to `1.25.13` in v1.6.10. Raising this value is allowed; lowering it requires an explicit security review and changelog entry.
 
 Release builds must also have `staticcheck` and `govulncheck` available on PATH.
+
+### Governed updater release controls
+
+- `WAR_ROOM_UPDATE_SIGNING_KEY_B64` — **GitHub Actions secret only**. Base64 Ed25519 private key used by the CI-only update-plan signer. It must never be stored in runtime state, source, artifacts, logs, screenshots, or release notes.
+- `WAR_ROOM_UPDATE_SIGNING_KEY_ID` — repository variable identifying the pinned public key compiled into `internal/updater/production_trust.go`.
+- `WAR_ROOM_OFFICIAL_RELEASE=1` — release-gate test switch. CI uses it to require at least one valid compile-time production update key before an official updater-enabled release.
+
+The updater does not read a runtime trust-store path. Production public trust is compiled into the updater binary so a local caller cannot substitute its own key. The current v1.6.14 candidate intentionally has no production key provisioned and therefore cannot pass the official updater release gate.
