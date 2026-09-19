@@ -4,7 +4,7 @@
 ## 1. Project Identity
 
   Name        Aftergraph War Room (Autonomous Intelligence Operating Environment)
-  Role        Human Control & Observability Plane across 30 Polyrepos, Compute & Agents
+  Role        Human Control & Observability Plane across the Aftergraph polyrepo platform (33 repos in the canonical `platform-topology/2.0` contract), Compute & Agents
   Purpose     Observe, correlate, reason, prioritize, authorize, execute, evidence, and verify autonomous work across code, compute, agents, and external integrations without inventing canonical state.
   Stack       Node.js (Pure stdlib REST/SSE BFF), Vanilla Web Cockpit (HTML5, CSS3, JS), Append-only WAL persistence.
   Endpoint    http://localhost:3333
@@ -45,14 +45,21 @@
 # Run full automated test pyramid (Contracts, Idempotency, Collision, Sentinel, E2E)
 node tests/run-all.js
 
+# Quick intelligence self-check (8 checks)
+node check.js
+
 # Start/run Full War Room Server (Port 3333)
 node server.js
 ```
+
+CI: `.github/workflows/bff-verification.yml` runs syntax gates, the acceptance suite,
+the self-check, and a secret scan for every change to the BFF/cockpit/integration
+planes. Desktop Go code is gated separately by `desktop-stabilization.yml`.
 
 ---
 
 ## 4. Bot & Integration References
 
-- [BOT_INTEGRATION_SPEC.md](file:///C:/Users/empir/.gemini/antigravity-ide/scratch/aftergraph-watchtower/BOT_INTEGRATION_SPEC.md): Full HTTP API signature specification for registering bots and checking collisions.
-- [TELEGRAM_BOT_PROMPT.md](file:///C:/Users/empir/.gemini/antigravity-ide/scratch/aftergraph-watchtower/TELEGRAM_BOT_PROMPT.md): System prompt & command specification for @AftergraphWatchdogBot.
-- [implementation_plan.md](file:///C:/Users/empir/.gemini/antigravity-ide/scratch/aftergraph-watchtower/implementation_plan.md): Full-stack architectural plan across Waves W0 to W15.
+- [BOT_INTEGRATION_SPEC.md](BOT_INTEGRATION_SPEC.md): Full HTTP API signature specification for registering bots and checking collisions.
+- [TELEGRAM_BOT_PROMPT.md](TELEGRAM_BOT_PROMPT.md): System prompt & command specification for @AftergraphWatchdogBot.
+- Repository inventory is not maintained here: the canonical source is `Aftergraph/after-graph-governance/docs/platform-topology/2.0.json` (contract `platform-topology/2.0`).

@@ -1,7 +1,7 @@
 # Aftergraph War Room
 
 > **Unified Autonomous Intelligence Operating Environment & Human Control Plane**
-> Observing, understanding, authorizing, and verifying autonomous work across 31 repositories, compute nodes (Jonas Lenovo Yoga & Hetzner VDS), agent fleets, and external integrations without inventing canonical state.
+> Observing, understanding, authorizing, and verifying autonomous work across 33 repositories (canonical inventory: `Aftergraph/after-graph-governance/docs/platform-topology/2.0.json`), compute nodes (Jonas Lenovo Yoga & Hetzner VDS), agent fleets, and external integrations without inventing canonical state.
 
 ```text
 Observe → Normalize → Correlate → Reason → Prioritize
@@ -118,7 +118,7 @@ See `packages/egac/SPECIFICATION.md` for the formal specification with proofs.
 |----------|-------------|
 | `GET /api/health` | Server health, uptime, SSE clients |
 | `GET /api/org/summary` | Full state summary with telemetry |
-| `GET /api/repos` | 31 repos with governance classification |
+| `GET /api/repos` | Repos with governance classification (live org sync; canonical inventory in `after-graph-governance` platform-topology/2.0) |
 | `GET /api/missions` | Active missions |
 | `GET /api/agents` | Agent fleet |
 | `GET /api/telemetry` | Lenovo + VDS hardware telemetry |
