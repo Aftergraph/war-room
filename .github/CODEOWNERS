@@ -1,0 +1,4 @@
+/desktop/ @JonasAbde
+/.github/workflows/desktop-*.yml @JonasAbde
+/.github/PULL_REQUEST_TEMPLATE/desktop-release.md @JonasAbde
+/.github/ISSUE_TEMPLATE/desktop-bug.yml @JonasAbde

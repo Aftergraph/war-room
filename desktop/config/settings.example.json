@@ -1,0 +1,31 @@
+{
+  "githubOrg": "Aftergraph",
+  "refreshSeconds": 60,
+  "workflowRepoCap": 33,
+  "probes": [
+    {
+      "id": "aftergraph-org",
+      "name": "aftergraph.org",
+      "url": "https://aftergraph.org",
+      "domain": "Brand & Public Surface",
+      "enabled": true
+    },
+    {
+      "id": "aftergraph-docs",
+      "name": "docs.aftergraph.org",
+      "url": "https://docs.aftergraph.org",
+      "domain": "Brand & Public Surface",
+      "enabled": true
+    }
+  ],
+  "repoDomains": {},
+  "typeSafeAuto": true,
+  "typeSafeMinIntervalSec": 300,
+  "typeSafeDailyBudget": 60,
+  "worksEnabled": false,
+  "worksUrl": "",
+  "agentStaleSeconds": 45,
+  "assistantLocalModel": true,
+  "assistantOllamaUrl": "http://127.0.0.1:11434",
+  "assistantModel": ""
+}

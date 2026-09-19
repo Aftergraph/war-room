@@ -1,0 +1,88 @@
+name: Desktop release
+
+on:
+  push:
+    tags:
+      - "desktop-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.x"
+          cache-dependency-path: desktop/go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install analyzers
+        shell: pwsh
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@v0.8.1
+          go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
+      - name: Verify tag/version
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".Replace("desktop-v", "")
+          $line = Select-String -Path app.go -Pattern 'var version = "([^"]+)"'
+          $sourceVersion = $line.Matches[0].Groups[1].Value
+          if ($version -ne $sourceVersion) { throw "tag $version does not match app version $sourceVersion" }
+          python scripts/verify-release-metadata.py
+      - name: Full release gates
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".Replace("desktop-v", "")
+          go test -count=1 ./...
+          go test -shuffle=on -count=10 ./...
+          go vet ./...
+          staticcheck ./...
+          node --check web/app.js
+          node --check web/visual-engine.js
+          node --check web/spatial-engine.js
+          node --check web/icons.js
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          go build -trimpath -ldflags="-H=windowsgui -s -w -X main.version=$version" -o dist/Aftergraph-War-Room.exe .
+          govulncheck -mode=binary dist/Aftergraph-War-Room.exe
+          $env:RELEASE_GATES_COMPLETE = "1"
+          $env:OFFICIAL_RELEASE = "1"
+          python scripts/generate-release-metadata.py
+          Remove-Item Env:RELEASE_GATES_COMPLETE,Env:OFFICIAL_RELEASE -ErrorAction SilentlyContinue
+      - name: Package
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".Replace("desktop-v", "")
+          $stage = "dist/Aftergraph-War-Room-$version-Windows-x64"
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Copy-Item dist/Aftergraph-War-Room.exe $stage/
+          Copy-Item CHANGELOG.md,VERIFICATION.md,README.md,LICENSE.txt $stage/
+          Copy-Item docs/WEAKNESSES-AND-RISK-REGISTER.md $stage/
+          Copy-Item BUILD-MANIFEST.json,SHA256SUMS.txt $stage/
+          $hash = (Get-FileHash dist/Aftergraph-War-Room.exe -Algorithm SHA256).Hash.ToLower()
+          "$hash  Aftergraph-War-Room.exe" | Add-Content "$stage/SHA256SUMS.txt"
+          Compress-Archive -Path "$stage/*" -DestinationPath "dist/Aftergraph-War-Room-$version-Windows-x64.zip" -Force
+          Get-FileHash "dist/Aftergraph-War-Room-$version-Windows-x64.zip" -Algorithm SHA256 | Format-List
+      - name: Publish GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = "${{ github.ref_name }}".Replace("desktop-v", "")
+          gh release create "${{ github.ref_name }}" `
+            "dist/Aftergraph-War-Room.exe" `
+            "dist/Aftergraph-War-Room-$version-Windows-x64.zip" `
+            "BUILD-MANIFEST.json" "SHA256SUMS.txt" `
+            "CHANGELOG.md" "VERIFICATION.md" `
+            --repo "${{ github.repository }}" `
+            --title "Aftergraph War Room Desktop v$version" `
+            --generate-notes
