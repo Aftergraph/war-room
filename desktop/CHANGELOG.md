@@ -4,7 +4,18 @@ All notable changes to the AFTERGRAPH / WAR ROOM Desktop line are recorded here.
 
 The format follows Keep a Changelog conventions and semantic versioning. A version is not considered released until its exact source commit, native Windows build, verification record, executable SHA-256, and release notes are published together.
 
-## [1.6.11] - Unreleased
+## [1.6.12] - Unreleased
+
+### Security
+- Replaced ad-hoc log-secret pattern ownership with a central typed secret registry covering GitHub, WORKS, TypeSafe, Agent Bridge, War Room session, Bearer transport, and generic named-secret surfaces.
+- Added a regression corpus for recognizable token formats and opaque credentials in their registered label contexts.
+- Added a source-contract test that scans production Go vault access and fails when a new vault credential key is introduced without registry coverage.
+
+### Changed
+- Log and diagnostic redaction now route through the canonical registry instead of a private regex list in `logging.go`.
+- Desktop build/release defaults and QA version fixtures now target v1.6.12.
+
+## [1.6.11] - 2026-09-19
 
 ### Security
 - Hardened the loopback HTTP boundary against DNS-rebinding and cross-origin session/token access: every request must use the exact IPv4 loopback authority opened by the desktop runtime, and requests carrying an `Origin` must match that authority exactly.
