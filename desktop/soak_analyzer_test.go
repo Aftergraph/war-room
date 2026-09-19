@@ -11,12 +11,12 @@ import (
 )
 
 type soakAnalysis struct {
-	EvidenceComplete              bool                   `json:"evidenceComplete"`
-	ClosureVerdict                string                 `json:"closureVerdict"`
-	ObservedSampleSpanSec         float64                `json:"observedSampleSpanSec"`
-	RecomputedNonLiveRowCount     int                    `json:"recomputedNonLiveRowCount"`
-	Completeness                  map[string]bool        `json:"completeness"`
-	TrendFlags                    []string               `json:"trendFlags"`
+	EvidenceComplete          bool            `json:"evidenceComplete"`
+	ClosureVerdict            string          `json:"closureVerdict"`
+	ObservedSampleSpanSec     float64         `json:"observedSampleSpanSec"`
+	RecomputedNonLiveRowCount int             `json:"recomputedNonLiveRowCount"`
+	Completeness              map[string]bool `json:"completeness"`
+	TrendFlags                []string        `json:"trendFlags"`
 }
 
 func pythonCommand(t *testing.T) string {
