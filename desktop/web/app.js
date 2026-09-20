@@ -15,7 +15,7 @@ async function api(path,opt={}){const headers={...(opt.headers||{})};if(S.sessio
 function latestWorkflowRuns(runs=[]){const m=new Map();for(const w of runs){const k=`${w.repo}\0${w.name}`;const prev=m.get(k);if(!prev||new Date(w.createdAt)>new Date(prev.createdAt))m.set(k,w)}return [...m.values()].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));}
 function isBadConclusion(x=''){return['failure','timed_out','action_required','startup_failure'].includes(x)}
 function isGoodConclusion(x=''){return x==='success'}
-function isBadProbe(p){return isBadProbe(p)}
+function isBadProbe(p){return p.status==='down'||p.status==='degraded'}
 function countBadWorkflows(runs=[]){return runs.filter(w=>isBadConclusion(w.conclusion)).length}
 function isInactiveAgent(x){returnisInactiveAgent(x)}
 function observedAgeSeconds(){if(!S.data?.github?.observedAt)return Infinity;return Math.max(0,(Date.now()-new Date(S.data.github.observedAt).getTime())/1000)}
