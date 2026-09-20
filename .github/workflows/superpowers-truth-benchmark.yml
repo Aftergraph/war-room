@@ -14,11 +14,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
           go-version: '1.23.x'
       - name: JavaScript syntax
         run: node --check desktop/web/app.js
+      - name: Canonical + semantic equivalence
+        env:
+          TRUTH_BASE_SHA: 5c0baed576dda766560d2b471cd303c2b02d847a
+        run: node desktop/scripts/verify-simplification-equivalence.mjs
       - name: Desktop Go tests
         working-directory: desktop
         run: go test ./...
