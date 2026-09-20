@@ -17,7 +17,7 @@ function isBadConclusion(x=''){return['failure','timed_out','action_required','s
 function isGoodConclusion(x=''){return x==='success'}
 function isBadProbe(p){return p.status==='down'||p.status==='degraded'}
 function countBadWorkflows(runs=[]){return runs.filter(w=>isBadConclusion(w.conclusion)).length}
-function isInactiveAgent(x){returnisInactiveAgent(x)}
+function isInactiveAgent(x){return['stale','offline'].includes(x.state)}
 function observedAgeSeconds(){if(!S.data?.github?.observedAt)return Infinity;return Math.max(0,(Date.now()-new Date(S.data.github.observedAt).getTime())/1000)}
 function githubFreshnessTTLSeconds(){const reconcile=Number(S.data?.github?.reconcileSeconds||S.settings?.refreshSeconds||0);if(!Number.isFinite(reconcile)||reconcile<=0)return 900;return Math.max(180,Math.min(1800,reconcile*4))}
 function githubObservationMode(){const g=S.data?.github;if(!g?.observedAt)return'unknown';const remote=g.source==='GitHub REST API'||/rest/i.test(String(g.observationMode||''));if(!remote)return(g.repos?.length||0)>0?'snapshot':'unknown';if(observedAgeSeconds()>githubFreshnessTTLSeconds())return'stale';if(S.sseState==='offline')return'offline';if(S.sseState==='reconnecting')return'reconnecting';if(S.sseState==='connecting')return'connecting';return'live'}
