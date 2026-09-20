@@ -123,3 +123,52 @@ jobs:
           } finally {
             if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force }
           }
+
+  browser-execution-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+      - name: Build runtime
+        working-directory: desktop
+        run: go build -trimpath -o dist/warroom-browser-smoke .
+      - name: Execute frontend in headless Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          export WAR_ROOM_NO_BROWSER=1
+          export AFTERGRAPH_NO_BROWSER=1
+          export HOME="$RUNNER_TEMP/warroom-browser-home"
+          mkdir -p "$HOME"
+          ./desktop/dist/warroom-browser-smoke >"$RUNNER_TEMP/warroom-browser.log" 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          port=""
+          for i in $(seq 1 60); do
+            for p in $(seq 37621 37631); do
+              if curl -fsS "http://127.0.0.1:$p/api/health" >/dev/null 2>&1; then
+                port="$p"
+                break 2
+              fi
+            done
+            sleep 0.5
+          done
+          test -n "$port" || { cat "$RUNNER_TEMP/warroom-browser.log"; exit 1; }
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$chrome" || { echo "No Chromium browser available"; exit 1; }
+          for hash in overview repositories agents verification; do
+            if [ "$hash" = overview ]; then url="http://127.0.0.1:$port/"; else url="http://127.0.0.1:$port/#$hash"; fi
+            out="$RUNNER_TEMP/dom-$hash.html"
+            err="$RUNNER_TEMP/chrome-$hash.log"
+            "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=5000 --dump-dom "$url" >"$out" 2>"$err"
+            grep -F 'Search or ask War Room' "$out" >/dev/null
+            if grep -F 'Boot failure:' "$out"; then exit 1; fi
+            if grep -Ei 'Uncaught (TypeError|ReferenceError|SyntaxError)' "$err"; then exit 1; fi
+          done
+          grep -F 'Repositories' "$RUNNER_TEMP/dom-repositories.html" >/dev/null
+          grep -E 'Agents (&amp;|&) workers' "$RUNNER_TEMP/dom-agents.html" >/dev/null
+          grep -F 'Verification' "$RUNNER_TEMP/dom-verification.html" >/dev/null
+          session="$(curl -fsS "http://127.0.0.1:$port/api/session" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).session))')"
+          curl -fsS -X POST -H "X-WarRoom-Session: $session" "http://127.0.0.1:$port/api/shutdown" >/dev/null
