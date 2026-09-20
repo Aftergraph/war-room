@@ -171,3 +171,41 @@ jobs:
           WAR_ROOM_URL="http://127.0.0.1:$port/" node desktop/scripts/browser-truth-smoke.mjs
           session="$(curl -fsS "http://127.0.0.1:$port/api/session" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).session))')"
           curl -fsS -X POST -H "X-WarRoom-Session: $session" "http://127.0.0.1:$port/api/shutdown" >/dev/null
+
+  performance-equivalence-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build exact baseline and exact head
+        shell: bash
+        env:
+          TRUTH_BASE_SHA: 5c0baed576dda766560d2b471cd303c2b02d847a
+        run: |
+          set -euo pipefail
+          git worktree add --detach "$RUNNER_TEMP/truth-base" "$TRUTH_BASE_SHA"
+          git worktree add --detach "$RUNNER_TEMP/truth-head" HEAD
+          mkdir -p "$RUNNER_TEMP/truth-base/desktop/dist" "$RUNNER_TEMP/truth-head/desktop/dist"
+          (cd "$RUNNER_TEMP/truth-base/desktop" && go build -trimpath -o dist/warroom-base .)
+          (cd "$RUNNER_TEMP/truth-head/desktop" && go build -trimpath -o dist/warroom-head .)
+      - name: Paired runtime/resource comparison
+        shell: bash
+        run: |
+          set -euo pipefail
+          python desktop/scripts/runtime-perf-compare.py \
+            --base "$RUNNER_TEMP/truth-base/desktop/dist/warroom-base" \
+            --head "$RUNNER_TEMP/truth-head/desktop/dist/warroom-head" \
+            --iterations 12 \
+            --out "$RUNNER_TEMP/runtime-perf.json"
+          cat "$RUNNER_TEMP/runtime-perf.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: simplification-runtime-performance
+          path: ${{ runner.temp }}/runtime-perf.json
