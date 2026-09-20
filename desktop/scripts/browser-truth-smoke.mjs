@@ -66,7 +66,7 @@ async function inspect(url, expectedTitle) {
       expression: `(() => ({
         title: document.querySelector('#viewTitle')?.textContent?.trim() || '',
         bootFailure: document.body?.innerText?.includes('Boot failure:') || false,
-        hasComposer: document.body?.innerText?.includes('Search or ask War Room') || false,
+        hasComposer: document.querySelector('#commandBtn')?.getAttribute('aria-label') === 'Search or ask War Room' && !!document.querySelector('#askInput'),
         activeViews: [...document.querySelectorAll('.view.active')].map(x => x.id),
         readyState: document.readyState
       }))()`,
