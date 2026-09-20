@@ -209,3 +209,69 @@ jobs:
         with:
           name: simplification-runtime-performance
           path: ${{ runner.temp }}/runtime-perf.json
+
+  browser-performance-equivalence-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build exact baseline and exact head
+        shell: bash
+        env:
+          TRUTH_BASE_SHA: 5c0baed576dda766560d2b471cd303c2b02d847a
+        run: |
+          set -euo pipefail
+          git worktree add --detach "$RUNNER_TEMP/browser-base" "$TRUTH_BASE_SHA"
+          git worktree add --detach "$RUNNER_TEMP/browser-head" HEAD
+          mkdir -p "$RUNNER_TEMP/browser-base/desktop/dist" "$RUNNER_TEMP/browser-head/desktop/dist"
+          (cd "$RUNNER_TEMP/browser-base/desktop" && go build -trimpath -o dist/warroom-base .)
+          (cd "$RUNNER_TEMP/browser-head/desktop" && go build -trimpath -o dist/warroom-head .)
+      - name: Start both runtimes and compare browser metrics
+        shell: bash
+        run: |
+          set -euo pipefail
+          export WAR_ROOM_NO_BROWSER=1
+          export AFTERGRAPH_NO_BROWSER=1
+          mkdir -p "$RUNNER_TEMP/browser-base-home" "$RUNNER_TEMP/browser-head-home"
+          HOME="$RUNNER_TEMP/browser-base-home" "$RUNNER_TEMP/browser-base/desktop/dist/warroom-base" >"$RUNNER_TEMP/browser-base.log" 2>&1 &
+          base_pid=$!
+          base_port=''
+          for i in $(seq 1 80); do
+            for p in $(seq 37621 37631); do
+              if curl -fsS "http://127.0.0.1:$p/api/health" >/dev/null 2>&1; then base_port="$p"; break 2; fi
+            done
+            sleep 0.1
+          done
+          test -n "$base_port" || { cat "$RUNNER_TEMP/browser-base.log"; exit 1; }
+          HOME="$RUNNER_TEMP/browser-head-home" "$RUNNER_TEMP/browser-head/desktop/dist/warroom-head" >"$RUNNER_TEMP/browser-head.log" 2>&1 &
+          head_pid=$!
+          head_port=''
+          for i in $(seq 1 80); do
+            for p in $(seq 37621 37631); do
+              if [ "$p" != "$base_port" ] && curl -fsS "http://127.0.0.1:$p/api/health" >/dev/null 2>&1; then head_port="$p"; break 2; fi
+            done
+            sleep 0.1
+          done
+          test -n "$head_port" || { cat "$RUNNER_TEMP/browser-head.log"; kill "$base_pid" || true; exit 1; }
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$chrome" || { echo 'No Chromium browser available'; exit 1; }
+          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --remote-debugging-port=9223 --user-data-dir="$RUNNER_TEMP/chrome-perf-profile" about:blank >"$RUNNER_TEMP/chrome-perf.log" 2>&1 &
+          chrome_pid=$!
+          cleanup() {
+            kill "$chrome_pid" 2>/dev/null || true
+            kill "$head_pid" 2>/dev/null || true
+            kill "$base_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+          BASE_URL="http://127.0.0.1:$base_port/" HEAD_URL="http://127.0.0.1:$head_port/" node desktop/scripts/browser-perf-compare.mjs | tee "$RUNNER_TEMP/browser-perf.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: simplification-browser-performance
+          path: ${{ runner.temp }}/browser-perf.json
