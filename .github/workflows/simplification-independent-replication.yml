@@ -1,0 +1,40 @@
+name: Independent simplification replication
+
+on:
+  push:
+    branches:
+      - experiment/simplify-independent-replication
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reproduce-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+      - name: Independent deterministic reproduction
+        env:
+          TRUTH_BASE_SHA: 5c0baed576dda766560d2b471cd303c2b02d847a
+        run: node desktop/scripts/reproduce-simplification-independent.mjs
+      - name: Frontend syntax
+        run: node --check desktop/web/app.js
+      - name: Repository-native Go tests
+        working-directory: desktop
+        run: go test -count=1 ./...
+      - name: Exact reproduced blob
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git hash-object desktop/web/app.js)"
+          test "$actual" = "0fed9aa3e968c620d8f1cb383c24a2e7358b6462"
+          echo "reproduced_blob=$actual"
