@@ -56,7 +56,7 @@ if (baseCanon !== curCanon) {
 }
 
 const prelude = `
-function latestWorkflowRuns(runs=[]){const m=new Map();for(const w of runs){const k=\`${w.repo}\\0${w.name}\`;const prev=m.get(k);if(!prev||new Date(w.createdAt)>new Date(prev.createdAt))m.set(k,w)}return [...m.values()].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));}
+function latestWorkflowRuns(runs=[]){const m=new Map();for(const w of runs){const k=\`\${w.repo}\\0\${w.name}\`;const prev=m.get(k);if(!prev||new Date(w.createdAt)>new Date(prev.createdAt))m.set(k,w)}return [...m.values()].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));}
 function isBadConclusion(x=''){return['failure','timed_out','action_required','startup_failure'].includes(x)}
 ${helperLines.join('\n')}
 globalThis.out={latestObservedWorkflows,isBadProbe,countBadWorkflows,isInactiveAgent,repoCount,domainCount,needsYouCount};
