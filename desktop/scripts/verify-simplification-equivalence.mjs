@@ -25,7 +25,7 @@ function canonicalizeBase(src) {
     .replaceAll("latestWorkflowRuns(d.github.workflowRuns||[])", "__LATEST_WORKFLOWS__")
     .replaceAll("latest.filter(w=>isBadConclusion(w.conclusion)).length", "__BAD_WORKFLOW_COUNT__")
     .replaceAll("latest.filter(x=>isBadConclusion(x.conclusion)).length", "__BAD_WORKFLOW_COUNT__")
-    .replaceAll("(d.probes||[]).filter(p=>p.status==='down'||p.status==='degraded').length", "__BAD_PROBE_COUNT__")
+    .replaceAll("p.status==='down'||p.status==='degraded'", "__BAD_PROBE_PRED__")
     .replaceAll("['stale','offline'].includes(x.state)", "__INACTIVE_AGENT__")
     .replaceAll("d.github.repos?.length||0", "__REPO_COUNT__")
     .replaceAll("d.domains?.length||0", "__DOMAIN_COUNT__")
@@ -38,7 +38,8 @@ function canonicalizeCurrent(src) {
   return out
     .replaceAll("latestObservedWorkflows(d)", "__LATEST_WORKFLOWS__")
     .replaceAll("countBadWorkflows(latest)", "__BAD_WORKFLOW_COUNT__")
-    .replaceAll("(d.probes||[]).filter(isBadProbe).length", "__BAD_PROBE_COUNT__")
+    .replaceAll("isBadProbe(p)", "__BAD_PROBE_PRED__")
+    .replaceAll(".filter(isBadProbe)", ".filter(p=>__BAD_PROBE_PRED__)")
     .replaceAll("isInactiveAgent(x)", "__INACTIVE_AGENT__")
     .replaceAll("repoCount(d)", "__REPO_COUNT__")
     .replaceAll("domainCount(d)", "__DOMAIN_COUNT__")
