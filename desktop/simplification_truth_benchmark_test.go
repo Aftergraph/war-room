@@ -14,13 +14,13 @@ func TestSimplificationTruthBenchmarkContracts(t *testing.T) {
 	src := string(b)
 
 	required := map[string]int{
-		"function latestObservedWorkflows(d){return latestWorkflowRuns(d.github.workflowRuns||[])}": 1,
-		"function isBadProbe(p){return p.status==='down'||p.status==='degraded'}": 1,
+		"function latestObservedWorkflows(d){return latestWorkflowRuns(d.github.workflowRuns||[])}":        1,
+		"function isBadProbe(p){return p.status==='down'||p.status==='degraded'}":                          1,
 		"function countBadWorkflows(runs=[]){return runs.filter(w=>isBadConclusion(w.conclusion)).length}": 1,
-		"function isInactiveAgent(x){return['stale','offline'].includes(x.state)}": 1,
-		"function repoCount(d){return d.github.repos?.length||0}": 1,
-		"function domainCount(d){return d.domains?.length||0}": 1,
-		"function needsYouCount(d){return d.needsYou||0}": 1,
+		"function isInactiveAgent(x){return['stale','offline'].includes(x.state)}":                         1,
+		"function repoCount(d){return d.github.repos?.length||0}":                                          1,
+		"function domainCount(d){return d.domains?.length||0}":                                             1,
+		"function needsYouCount(d){return d.needsYou||0}":                                                  1,
 	}
 	for needle, want := range required {
 		if got := strings.Count(src, needle); got != want {
@@ -44,12 +44,12 @@ func TestSimplificationTruthBenchmarkContracts(t *testing.T) {
 
 	callCounts := map[string]int{
 		"latestObservedWorkflows(d)": 7,
-		"countBadWorkflows(": 4,
-		"isInactiveAgent(": 3,
-		"repoCount(": 4,
-		"domainCount(": 4,
-		"needsYouCount(": 5,
-		".filter(isBadProbe)": 2,
+		"countBadWorkflows(":         4,
+		"isInactiveAgent(":           3,
+		"repoCount(":                 4,
+		"domainCount(":               4,
+		"needsYouCount(":             5,
+		".filter(isBadProbe)":        2,
 	}
 	for needle, want := range callCounts {
 		if got := strings.Count(src, needle); got != want {
