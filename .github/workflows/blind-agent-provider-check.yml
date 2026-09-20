@@ -1,0 +1,32 @@
+name: Blind agent provider check
+
+on:
+  push:
+    branches:
+      - experiment/blind-agent-provider-check
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  provider-availability:
+    runs-on: ubuntu-latest
+    env:
+      HAS_OPENAI: ${{ secrets.OPENAI_API_KEY != '' }}
+      HAS_GOOGLE: ${{ secrets.GOOGLE_API_KEY != '' }}
+      HAS_OPENROUTER: ${{ secrets.OPENROUTER_API_KEY != '' }}
+      HAS_DIALAGRAM: ${{ secrets.DIALAGRAM_API_KEY != '' }}
+    steps:
+      - name: Report provider availability without secret values
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os
+          print(json.dumps({
+            "OPENAI_API_KEY": os.environ["HAS_OPENAI"] == "true",
+            "GOOGLE_API_KEY": os.environ["HAS_GOOGLE"] == "true",
+            "OPENROUTER_API_KEY": os.environ["HAS_OPENROUTER"] == "true",
+            "DIALAGRAM_API_KEY": os.environ["HAS_DIALAGRAM"] == "true",
+          }))
+          PY
