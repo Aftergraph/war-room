@@ -23,11 +23,6 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: homeos-v014/frontend/package-lock.json
       - name: Decode and verify frontend source
         shell: bash
         run: |
@@ -36,6 +31,9 @@ jobs:
           base64 -d homeos-v014/frontend-src.b64 > homeos-v014/work/frontend-src.tgz
           echo "f396350211a938499f9e4dee886e8639eef2590141ef0ceb771eee1d009323e8  homeos-v014/work/frontend-src.tgz" | sha256sum -c -
           tar -xzf homeos-v014/work/frontend-src.tgz -C homeos-v014
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
       - name: Lock dependencies
         working-directory: homeos-v014/frontend
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
