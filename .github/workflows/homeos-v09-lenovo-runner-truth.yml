@@ -1,0 +1,55 @@
+name: Home OS v0.9 Jonas Lenovo runner truth
+on:
+  push:
+    branches:
+      - homeos/v0.9-lenovo-gates
+    paths:
+      - ".github/workflows/homeos-v09-lenovo-runner-truth.yml"
+permissions:
+  contents: read
+concurrency:
+  group: homeos-v09-lenovo-runner-truth
+  cancel-in-progress: false
+jobs:
+  runner-truth:
+    runs-on: [self-hosted, Windows, X64, aftergraph-site-deploy]
+    timeout-minutes: 10
+    steps:
+      - name: Capture runner and hardware truth
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          function Decode([UInt16[]]$v) { -join ($v | Where-Object { $_ -ne 0 } | ForEach-Object { [char]$_ }) }
+          $runnerServices = @(Get-Service | Where-Object { $_.Name -match 'actions.runner|github' -or $_.DisplayName -match 'Actions Runner|GitHub' } | Select-Object Name,DisplayName,Status,StartType)
+          $runnerProcesses = @(Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -match 'Runner.Listener|Runner.Worker' } | Select-Object ProcessName,Id,StartTime)
+          $monitors = @()
+          try {
+            Get-CimInstance -Namespace root\wmi -ClassName WmiMonitorID | ForEach-Object {
+              $monitors += [ordered]@{ name=(Decode $_.UserFriendlyName); manufacturer=(Decode $_.ManufacturerName); serial=(Decode $_.SerialNumberID); active=[bool]$_.Active }
+            }
+          } catch {}
+          $report=[ordered]@{
+            schema="AftergraphHomeOSRunnerTruth/v1"
+            capturedAt=(Get-Date).ToUniversalTime().ToString("o")
+            machine=$env:COMPUTERNAME
+            runnerName=$env:RUNNER_NAME
+            runnerOs=$env:RUNNER_OS
+            runnerArch=$env:RUNNER_ARCH
+            services=$runnerServices
+            processes=$runnerProcesses
+            monitors=$monitors
+            targetMonitorPresent=[bool]($monitors | Where-Object { $_.name -eq "C27-I60UB" })
+          }
+          $dir=Join-Path $env:RUNNER_TEMP "homeos-v09-runner-truth"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          $report | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $dir "report.json") -Encoding UTF8
+          Write-Host "HOMEOS_V09_RUNNER_TRUTH=PASS"
+          Write-Host ("MACHINE="+$env:COMPUTERNAME)
+          Write-Host ("RUNNER="+$env:RUNNER_NAME)
+          Write-Host ("TARGET_MONITOR_PRESENT="+$report.targetMonitorPresent)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: homeos-v09-runner-truth
+          path: ${{ runner.temp }}\homeos-v09-runner-truth\report.json
+          retention-days: 30
