@@ -1,0 +1,24 @@
+name: Home OS v0.18 frontend lockfile
+on:
+  push:
+    branches: [homeos/v0.18-lockfile]
+permissions:
+  contents: read
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: homeos-v018-lock/package.json
+      - name: Resolve exact dependency graph
+        working-directory: homeos-v018-lock
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: homeos-v018-package-lock
+          path: homeos-v018-lock/package-lock.json
+          retention-days: 7
