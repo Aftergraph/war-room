@@ -1,4 +1,5 @@
 name: Home OS v0.14 frontend build
+# trigger: 1
 
 on:
   push:
