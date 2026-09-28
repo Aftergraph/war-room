@@ -1,0 +1,33 @@
+{
+  "name": "@aftergraph/home-os-frontend",
+  "private": true,
+  "version": "0.18.0",
+  "type": "module",
+  "engines": {"node": ">=22"},
+  "dependencies": {
+    "@base-ui/react": "1.8.0",
+    "@tanstack/react-query": "5.104.0",
+    "@tanstack/react-router": "1.170.38",
+    "lucide-react": "1.47.0",
+    "motion": "13.4.4",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "4.6.5",
+    "zustand": "5.0.15"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@playwright/test": "1.63.0",
+    "@storybook/react-vite": "10.6.0",
+    "@tailwindcss/vite": "4.3.3",
+    "@testing-library/react": "16.3.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "storybook": "10.6.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2",
+    "vite": "8.3.1",
+    "vitest": "5.0.2"
+  }
+}
