@@ -1,12 +1,11 @@
 name: Home OS v0.14 frontend build
-# trigger: 1
 
 on:
   push:
     branches:
       - homeos/v0.14-frontend-build
     paths:
-      - "homeos-v014/frontend-src.b64"
+      - "homeos-v014/real-src.*"
       - ".github/workflows/homeos-v014-frontend-build.yml"
   workflow_dispatch:
 
@@ -20,68 +19,84 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - name: Decode and verify frontend source
+
+      - name: Reconstruct and verify reviewed frontend source
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p homeos-v014/work
-          base64 -d homeos-v014/frontend-src.b64 > homeos-v014/work/frontend-src.tgz
-          echo "f396350211a938499f9e4dee886e8639eef2590141ef0ceb771eee1d009323e8  homeos-v014/work/frontend-src.tgz" | sha256sum -c -
+          cat homeos-v014/real-src.00 homeos-v014/real-src.01 homeos-v014/real-src.02 homeos-v014/real-src.03 > homeos-v014/work/frontend-src.b64
+          base64 -d homeos-v014/work/frontend-src.b64 > homeos-v014/work/frontend-src.tgz
+          echo "01f1fe0134a295c4179ec538ea46addf82668c60adc301940e1d0753acd81b36  homeos-v014/work/frontend-src.tgz" | sha256sum -c -
           tar -xzf homeos-v014/work/frontend-src.tgz -C homeos-v014
-      - name: Apply reviewed strictness fixes
-        shell: python
-        run: |
-          from pathlib import Path
-          p=Path("homeos-v014/frontend/src/App.tsx")
-          s=p.read_text()
-          s=s.replace("function TopStatus({snapshot}:{snapshot?:BootstrapSnapshot})", "function TopStatus({snapshot}:{snapshot:BootstrapSnapshot|undefined})")
-          s=s.replace("function Home({snapshot,loading,answer,setAnswer}:{snapshot?:BootstrapSnapshot;loading:boolean;answer:string;setAnswer(v:string):void})", "function Home({snapshot,loading,answer,setAnswer}:{snapshot:BootstrapSnapshot|undefined;loading:boolean;answer:string;setAnswer(v:string):void})")
-          s=s.replace("function SurfaceRouter({surface,snapshot}:{surface:Surface;snapshot?:BootstrapSnapshot})", "function SurfaceRouter({surface,snapshot}:{surface:Surface;snapshot:BootstrapSnapshot|undefined})")
-          p.write_text(s)
-          p=Path("homeos-v014/frontend/vite.config.ts")
-          p.write_text(p.read_text().replace("rollupOptions:", "rolldownOptions:"))
+          test -f homeos-v014/Aftergraph.HomeOS.Frontend/package.json
+          test -f homeos-v014/Aftergraph.HomeOS.Frontend/vite.config.ts
+
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "22"
-      - name: Lock dependencies
-        working-directory: homeos-v014/frontend
+
+      - name: Resolve immutable dependency graph
+        working-directory: homeos-v014/Aftergraph.HomeOS.Frontend
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
       - name: Install exact dependency graph
-        working-directory: homeos-v014/frontend
+        working-directory: homeos-v014/Aftergraph.HomeOS.Frontend
         run: npm ci --ignore-scripts --no-audit --no-fund
+
       - name: Typecheck
-        working-directory: homeos-v014/frontend
+        working-directory: homeos-v014/Aftergraph.HomeOS.Frontend
         run: npm run typecheck
+
+      - name: Lint
+        working-directory: homeos-v014/Aftergraph.HomeOS.Frontend
+        run: npm run lint
+
+      - name: Unit tests
+        working-directory: homeos-v014/Aftergraph.HomeOS.Frontend
+        run: npm test
+
       - name: Production build
-        working-directory: homeos-v014/frontend
+        working-directory: homeos-v014/Aftergraph.HomeOS.Frontend
         run: npm run build
-      - name: Audit production bundle
+
+      - name: Production bundle audit
         shell: bash
         run: |
           set -euo pipefail
-          test -f homeos-v014/frontend/dist/index.html
-          test -n "$(find homeos-v014/frontend/dist/assets -type f -name '*.js' -print -quit)"
-          test -n "$(find homeos-v014/frontend/dist/assets -type f -name '*.css' -print -quit)"
-          if grep -RInE '(localhost|127\.0\.0\.1|http://)' homeos-v014/frontend/dist; then
+          ROOT=homeos-v014/Aftergraph.HomeOS.Frontend
+          test -f "$ROOT/dist/index.html"
+          test -n "$(find "$ROOT/dist/assets" -type f -name '*.js' -print -quit)"
+          test -n "$(find "$ROOT/dist/assets" -type f -name '*.css' -print -quit)"
+          if grep -RInE '(localhost|127\.0\.0\.1|http://)' "$ROOT/dist"; then
             echo "Non-production URL found in frontend dist"
             exit 1
           fi
-          if ! grep -q "connect-src 'none'" homeos-v014/frontend/dist/index.html; then
-            echo "Strict frontend CSP missing"
+          if ! grep -q "connect-src 'none'" "$ROOT/dist/index.html"; then
+            echo "Strict frontend network CSP missing"
             exit 1
           fi
-          du -ah homeos-v014/frontend/dist | sort -h | tail -20
-      - name: Package frontend artifact
+          if grep -RInE '(DEMO|DemoProvider|MockProvider|FakeProvider|placeholder provider|MVP)' "$ROOT/dist"; then
+            echo "Non-production runtime marker found in frontend dist"
+            exit 1
+          fi
+          du -ah "$ROOT/dist" | sort -h | tail -20
+
+      - name: Package verified frontend artifact
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p homeos-v014/out
-          cp homeos-v014/frontend/package-lock.json homeos-v014/out/package-lock.json
-          cp -R homeos-v014/frontend/dist homeos-v014/out/dist
-          (cd homeos-v014/out && sha256sum package-lock.json dist/index.html dist/assets/* > SHA256SUMS.txt)
+          ROOT=homeos-v014/Aftergraph.HomeOS.Frontend
+          OUT=homeos-v014/out
+          mkdir -p "$OUT"
+          cp "$ROOT/package-lock.json" "$OUT/package-lock.json"
+          cp -R "$ROOT/dist" "$OUT/dist"
+          (cd "$OUT" && find dist -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt)
+          (cd "$OUT" && sha256sum package-lock.json >> SHA256SUMS.txt)
+
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: homeos-v014-frontend-dist
