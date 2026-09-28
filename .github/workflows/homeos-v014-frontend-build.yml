@@ -29,8 +29,20 @@ jobs:
           set -euo pipefail
           mkdir -p homeos-v014/work
           base64 -d homeos-v014/frontend-src.b64 > homeos-v014/work/frontend-src.tgz
-          echo "21b2adb49b5bb1ec36942638124bc7b171fb1ccd6c094c0c4c718a480c49724e  homeos-v014/work/frontend-src.tgz" | sha256sum -c -
+          echo "f396350211a938499f9e4dee886e8639eef2590141ef0ceb771eee1d009323e8  homeos-v014/work/frontend-src.tgz" | sha256sum -c -
           tar -xzf homeos-v014/work/frontend-src.tgz -C homeos-v014
+      - name: Apply reviewed strictness fixes
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path("homeos-v014/frontend/src/App.tsx")
+          s=p.read_text()
+          s=s.replace("function TopStatus({snapshot}:{snapshot?:BootstrapSnapshot})", "function TopStatus({snapshot}:{snapshot:BootstrapSnapshot|undefined})")
+          s=s.replace("function Home({snapshot,loading,answer,setAnswer}:{snapshot?:BootstrapSnapshot;loading:boolean;answer:string;setAnswer(v:string):void})", "function Home({snapshot,loading,answer,setAnswer}:{snapshot:BootstrapSnapshot|undefined;loading:boolean;answer:string;setAnswer(v:string):void})")
+          s=s.replace("function SurfaceRouter({surface,snapshot}:{surface:Surface;snapshot?:BootstrapSnapshot})", "function SurfaceRouter({surface,snapshot}:{surface:Surface;snapshot:BootstrapSnapshot|undefined})")
+          p.write_text(s)
+          p=Path("homeos-v014/frontend/vite.config.ts")
+          p.write_text(p.read_text().replace("rollupOptions:", "rolldownOptions:"))
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "22"
