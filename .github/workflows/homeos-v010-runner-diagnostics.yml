@@ -1,0 +1,44 @@
+name: Home OS v0.10 runner control-plane diagnostics
+on:
+  push:
+    branches:
+      - homeos/v0.10-runner-diagnostics
+    paths:
+      - ".github/workflows/homeos-v010-runner-diagnostics.yml"
+permissions:
+  contents: read
+  actions: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Inspect repository self-hosted runner control plane
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/homeos-runner-diagnostics"
+          OUT="$RUNNER_TEMP/homeos-runner-diagnostics/report.json"
+          if gh api "repos/$GITHUB_REPOSITORY/actions/runners?per_page=100" > "$OUT" 2>"$RUNNER_TEMP/homeos-runner-diagnostics/error.txt"; then
+            echo "RUNNER_CONTROL_PLANE=READABLE"
+            jq -r '.runners[]? | "RUNNER="+.name+"; status="+.status+"; busy="+(.busy|tostring)+"; labels="+([.labels[].name]|join(","))' "$OUT"
+          else
+            CODE=$?
+            python - <<'PY'
+import json, os
+p=os.path.join(os.environ["RUNNER_TEMP"],"homeos-runner-diagnostics","error.txt")
+err=open(p,encoding="utf-8",errors="replace").read() if os.path.exists(p) else "unknown"
+out={"schema":"AftergraphHomeOSRunnerControlPlane/v1","readable":False,"error":err}
+open(os.path.join(os.environ["RUNNER_TEMP"],"homeos-runner-diagnostics","report.json"),"w",encoding="utf-8").write(json.dumps(out,indent=2))
+PY
+            echo "RUNNER_CONTROL_PLANE=UNREADABLE"
+            exit 0
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: homeos-v010-runner-diagnostics
+          path: ${{ runner.temp }}/homeos-runner-diagnostics
+          retention-days: 14
