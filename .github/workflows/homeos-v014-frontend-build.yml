@@ -1,0 +1,78 @@
+name: Home OS v0.14 frontend build
+
+on:
+  push:
+    branches:
+      - homeos/v0.14-frontend-build
+    paths:
+      - "homeos-v014/frontend-src.b64"
+      - ".github/workflows/homeos-v014-frontend-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: homeos-v014-frontend-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: homeos-v014/frontend/package-lock.json
+      - name: Decode and verify frontend source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p homeos-v014/work
+          base64 -d homeos-v014/frontend-src.b64 > homeos-v014/work/frontend-src.tgz
+          echo "f396350211a938499f9e4dee886e8639eef2590141ef0ceb771eee1d009323e8  homeos-v014/work/frontend-src.tgz" | sha256sum -c -
+          tar -xzf homeos-v014/work/frontend-src.tgz -C homeos-v014
+      - name: Lock dependencies
+        working-directory: homeos-v014/frontend
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Install exact dependency graph
+        working-directory: homeos-v014/frontend
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Typecheck
+        working-directory: homeos-v014/frontend
+        run: npm run typecheck
+      - name: Production build
+        working-directory: homeos-v014/frontend
+        run: npm run build
+      - name: Audit production bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f homeos-v014/frontend/dist/index.html
+          test -n "$(find homeos-v014/frontend/dist/assets -type f -name '*.js' -print -quit)"
+          test -n "$(find homeos-v014/frontend/dist/assets -type f -name '*.css' -print -quit)"
+          if grep -RInE '(localhost|127\.0\.0\.1|http://)' homeos-v014/frontend/dist; then
+            echo "Non-production URL found in frontend dist"
+            exit 1
+          fi
+          if ! grep -q "connect-src 'none'" homeos-v014/frontend/dist/index.html; then
+            echo "Strict frontend CSP missing"
+            exit 1
+          fi
+          du -ah homeos-v014/frontend/dist | sort -h | tail -20
+      - name: Package frontend artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p homeos-v014/out
+          cp homeos-v014/frontend/package-lock.json homeos-v014/out/package-lock.json
+          cp -R homeos-v014/frontend/dist homeos-v014/out/dist
+          (cd homeos-v014/out && sha256sum package-lock.json dist/index.html dist/assets/* > SHA256SUMS.txt)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: homeos-v014-frontend-dist
+          path: homeos-v014/out
+          retention-days: 7
