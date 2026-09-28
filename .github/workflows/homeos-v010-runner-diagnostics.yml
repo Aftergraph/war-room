@@ -1,4 +1,5 @@
 name: Home OS v0.10 runner control-plane diagnostics
+# trigger: 2
 on:
   push:
     branches:
