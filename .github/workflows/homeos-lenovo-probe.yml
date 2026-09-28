@@ -1,0 +1,59 @@
+name: Home OS Lenovo capability probe
+on:
+  push:
+    branches:
+      - homeos/v0.8-lenovo-gates
+    paths:
+      - ".github/workflows/homeos-lenovo-probe.yml"
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: [self-hosted, Windows, X64, aftergraph-site-deploy]
+    timeout-minutes: 10
+    steps:
+      - name: Probe Lenovo for Home OS native gates
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          function Decode([UInt16[]]$v) { -join ($v | Where-Object { $_ -ne 0 } | ForEach-Object { [char]$_ }) }
+          $monitors = @()
+          try {
+            Get-CimInstance -Namespace root\wmi -ClassName WmiMonitorID | ForEach-Object {
+              $monitors += [ordered]@{
+                instance = $_.InstanceName
+                name = (Decode $_.UserFriendlyName)
+                manufacturer = (Decode $_.ManufacturerName)
+                serial = (Decode $_.SerialNumberID)
+                active = [bool]$_.Active
+              }
+            }
+          } catch {}
+          $pnp = @(Get-PnpDevice -Class Monitor -PresentOnly -ErrorAction SilentlyContinue | Select-Object FriendlyName,InstanceId,Status)
+          $dotnet = try { dotnet --info | Out-String } catch { "DOTNET_UNAVAILABLE: $($_.Exception.Message)" }
+          $power = powercfg /a | Out-String
+          $display = Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue | Select-Object Name,CurrentHorizontalResolution,CurrentVerticalResolution,CurrentRefreshRate,DriverVersion
+          $report = [ordered]@{
+            schema = "AftergraphHomeOSLenovoProbe/v1"
+            capturedAt = (Get-Date).ToUniversalTime().ToString("o")
+            machine = $env:COMPUTERNAME
+            runnerName = $env:RUNNER_NAME
+            runnerOs = $env:RUNNER_OS
+            monitors = $monitors
+            pnpMonitors = $pnp
+            videoControllers = $display
+            dotnet = $dotnet
+            powerCapabilities = $power
+          }
+          New-Item -ItemType Directory -Force -Path $env:RUNNER_TEMP\homeos-probe | Out-Null
+          $report | ConvertTo-Json -Depth 10 | Set-Content $env:RUNNER_TEMP\homeos-probe\report.json -Encoding UTF8
+          Write-Host "HOMEOS_LENOVO_PROBE=PASS"
+          Write-Host ("MACHINE=" + $env:COMPUTERNAME)
+          Write-Host ("RUNNER=" + $env:RUNNER_NAME)
+          foreach($m in $monitors){ Write-Host ("MONITOR=" + $m.name + "; active=" + $m.active) }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: homeos-lenovo-capability-probe
+          path: ${{ runner.temp }}\homeos-probe\report.json
+          retention-days: 7
