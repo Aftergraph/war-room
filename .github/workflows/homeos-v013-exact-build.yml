@@ -1,0 +1,66 @@
+name: Home OS v0.13 exact source build probe
+on:
+  push:
+    branches: [homeos/v0.13-build]
+    paths:
+      - "homeos-build-payload/**"
+      - ".github/workflows/homeos-v013-exact-build.yml"
+permissions:
+  contents: read
+jobs:
+  exact-build:
+    runs-on: windows-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d
+        with:
+          dotnet-version: "10.0.401"
+      - name: Reconstruct exact v0.13 source
+        shell: pwsh
+        run: |
+          $parts = Get-ChildItem .\homeos-build-payload\*.part | Sort-Object Name
+          if ($parts.Count -lt 1) { throw "No source payload parts found." }
+          $base64 = ($parts | ForEach-Object { Get-Content -Raw -LiteralPath $_.FullName }) -join ""
+          $archive = Join-Path $env:RUNNER_TEMP "homeos-v013-source.tar.xz"
+          [IO.File]::WriteAllBytes($archive, [Convert]::FromBase64String($base64))
+          $extract = Join-Path $env:RUNNER_TEMP "homeos-v013-source"
+          New-Item -ItemType Directory -Force -Path $extract | Out-Null
+          tar.exe -xf $archive -C $extract
+          $root = Get-ChildItem -LiteralPath $extract -Directory | Select-Object -First 1
+          if (-not $root) { throw "Source archive did not contain a root directory." }
+          "HOMEOS_SOURCE_ROOT=$($root.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+      - name: Source truth gates
+        shell: pwsh
+        run: |
+          Set-Location $env:HOMEOS_SOURCE_ROOT
+          python .\scripts\verify-current.py
+          python .\scripts\verify-production.py
+          python .\scripts\verify-static.py
+          python .\scripts\verify-ui.py
+      - name: Restore
+        shell: pwsh
+        run: |
+          Set-Location $env:HOMEOS_SOURCE_ROOT
+          dotnet restore .\Aftergraph.HomeOS.sln
+      - name: Tests
+        shell: pwsh
+        run: |
+          Set-Location $env:HOMEOS_SOURCE_ROOT
+          dotnet test .\Aftergraph.HomeOS.sln -c Release --no-restore
+      - name: Native build
+        shell: pwsh
+        run: |
+          Set-Location $env:HOMEOS_SOURCE_ROOT
+          dotnet build .\Aftergraph.HomeOS.sln -c Release -p:Platform=x64 --no-restore
+      - name: Release package
+        shell: pwsh
+        run: |
+          Set-Location $env:HOMEOS_SOURCE_ROOT
+          .\scripts\package.ps1 -Mode release
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: aftergraph-homeos-v013-exact-win-x64
+          path: ${{ env.HOMEOS_SOURCE_ROOT }}\artifacts\release\**
+          retention-days: 30
