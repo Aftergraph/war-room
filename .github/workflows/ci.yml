@@ -18,5 +18,3 @@ jobs:
           node-version: 22
       - name: Acceptance suite
         run: node tests/run-all.js
-      - name: ToolFabric projection
-        run: node tests/tool-fabric-projection.test.js
