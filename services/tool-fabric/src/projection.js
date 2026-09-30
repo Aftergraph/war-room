@@ -41,6 +41,7 @@ class ToolFabricProjection {
     const tools = snapshot && Array.isArray(snapshot.tools) ? snapshot.tools : null;
     if (!tools) errors.push('tools_array_required');
     if (snapshot && snapshot.authorityGranted === true) errors.push('authority_claim_forbidden');
+    if (snapshot && snapshot.credentialsExposed === true) errors.push('credential_exposure_forbidden');
 
     if (tools) {
       for (const tool of tools) {
@@ -82,10 +83,13 @@ class ToolFabricProjection {
       loadedAt: this.loadedAt,
       toolCount: tools.length,
       observationCount: Number(this.snapshot?.observationCount || 0),
+      generatedAt: this.snapshot?.generatedAt || null,
+      federation: this.snapshot?.federation ? JSON.parse(JSON.stringify(this.snapshot.federation)) : null,
       health,
       runtimes,
       kinds,
       authorityGranted: false,
+      credentialsExposed: false,
       errors: this.errors.slice(),
     };
   }
