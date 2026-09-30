@@ -1,7 +1,7 @@
 # Aftergraph War Room
 
 > **Unified Autonomous Intelligence Operating Environment & Human Control Plane**
-> Observing, understanding, authorizing, and verifying autonomous work across 31 repositories, compute nodes (Jonas Lenovo Yoga & Hetzner VDS), agent fleets, and external integrations without inventing canonical state.
+> Observing, understanding, authorizing, and verifying autonomous work across the live Aftergraph repository set, compute nodes (Jonas Lenovo Yoga & Hetzner VDS), agent fleets, and external integrations without inventing canonical state.
 
 ```text
 Observe → Normalize → Correlate → Reason → Prioritize
@@ -55,7 +55,7 @@ Observe → Normalize → Correlate → Reason → Prioritize
 
 ## The 6 Core Domains
 
-1. **01 SYSTEM REALITY**: Dynamic 31-repo polyrepo inventory with live GitHub sync, interactive topology mesh (7 planes), 30-repo grid view, and Operational Twin diff (Expected vs Observed HEAD SHAs).
+1. **01 SYSTEM REALITY**: Dynamic Aftergraph polyrepo inventory with live GitHub sync, interactive topology mesh (7 planes), live repository grid view, and Operational Twin diff (Expected vs Observed HEAD SHAs).
 2. **02 MISSIONS & WORKGRAPH**: Mission Control, budget tracking, SPEC-001 verifications, and interactive WorkGraph DAG execution canvas.
 3. **03 AGENTS & COMPUTE**: Agent fleet, live Lenovo Yoga & Hetzner VDS hardware telemetry, real-time Collision Radar, and Agent Trust Passports (L1 Observer → L4 Autonomous).
 4. **04 TRUST & AUTHORITY**: Fail-closed Trust Gateway, Active Learning (Human Oracle) triage, EGAC evidence-gated autonomy with provable FCR bound, and cross-repo blast-radius matrix.
@@ -66,7 +66,7 @@ Observe → Normalize → Correlate → Reason → Prioritize
 
 ## EGAC — Evidence-Gated Autonomy Controller
 
-The core algorithm that governs autonomous execution across all 31 repos. Grounded in the VAIE research program and MISSION-Bench STUDY-008 empirical results (275 runs, 7 conditions, 3 models).
+The core algorithm that governs autonomous execution across the live repository set. Grounded in the VAIE research program and MISSION-Bench STUDY-008 empirical results (275 runs, 7 conditions, 3 models).
 
 ### How it works
 
