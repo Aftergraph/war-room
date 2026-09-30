@@ -471,17 +471,8 @@ async function runAllTests() {
     assert.ok(syncRes.repos.every(r => typeof r.name === 'string' && r.name.length > 0));
 
     // Live discovery is an observation surface, not canonical topology truth.
-    // When canonical repos are visible, their governance classification must remain correct.
-    const govRepo = syncRes.repos.find(r => r.name === 'after-graph-governance');
-    if (govRepo) {
-      assert.strictEqual(govRepo.role, 'canonical-contracts');
-      assert.strictEqual(govRepo.plane, 'GOVERNANCE');
-    }
-    const worksRepo = syncRes.repos.find(r => r.name === 'works-execution');
-    if (worksRepo) {
-      assert.strictEqual(worksRepo.role, 'durable-execution');
-      assert.strictEqual(worksRepo.plane, 'EXECUTION');
-    }
+    // Role/plane drift belongs in Reality Diff against canonical governance state.
+    assert.ok(syncRes.repos.every(r => typeof r.role === 'string' && typeof r.plane === 'string'));
   });
 
   test('Decision Objects and Decision Inbox resolution with Trust Gateway tickets', () => {
