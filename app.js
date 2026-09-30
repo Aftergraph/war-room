@@ -464,9 +464,20 @@ function renderToolFabric() {
   const runtimeText = Object.entries(tf.runtimes || {})
     .map(([name, count]) => `${name}: ${count}`)
     .join(' • ') || 'no runtime targets';
+  const federation = tf.federation || null;
+  const staleSources = federation?.sources?.filter(source => source.state === 'stale') || [];
+  const missingRequired = federation?.sources?.filter(source => source.required && source.state === 'missing') || [];
+  const sourceText = federation?.sources?.length
+    ? federation.sources.map(source => `${source.source.replace('Aftergraph/', '')}: ${source.state}`).join(' • ')
+    : 'federation metadata unavailable';
+  const federationAttention = staleSources.length > 0 || missingRequired.length > 0 || federation?.healthy === false;
 
-  el.toolFabricStatusBadge.textContent = unhealthy > 0 ? 'ATTENTION' : degraded > 0 ? 'DEGRADED' : 'OBSERVED';
-  el.toolFabricStatusBadge.style.color = unhealthy > 0
+  el.toolFabricStatusBadge.textContent = unhealthy > 0 || federationAttention
+    ? 'ATTENTION'
+    : degraded > 0
+      ? 'DEGRADED'
+      : 'OBSERVED';
+  el.toolFabricStatusBadge.style.color = unhealthy > 0 || federationAttention
     ? 'var(--accent-danger)'
     : degraded > 0
       ? 'var(--accent-amber)'
@@ -477,7 +488,10 @@ function renderToolFabric() {
     <span class="flow-pill">${healthy} healthy</span>
     <span class="flow-pill">${degraded} degraded</span>
     <span class="flow-pill">${tf.observationCount} observations</span>
+    ${staleSources.length ? `<span class="flow-pill">${staleSources.length} stale source${staleSources.length === 1 ? '' : 's'}</span>` : ''}
+    ${missingRequired.length ? `<span class="flow-pill">${missingRequired.length} required source${missingRequired.length === 1 ? '' : 's'} missing</span>` : ''}
     <span class="metric-meta">${runtimeText}</span>
+    <span class="metric-meta">${sourceText}</span>
   `;
 }
 
