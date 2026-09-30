@@ -19,6 +19,7 @@ const { TelegramAdapter } = require('../../../integrations/telegram/src/adapter'
 const { IntegrationRegistry } = require('../../../integrations/external/src/registry');
 const { CredentialBroker } = require('../../../security/src/credentialBroker');
 const { OperationalOntologyEngine } = require('../../../packages/ontology/src');
+const { ToolFabricProjection } = require('../../../services/tool-fabric/src/projection');
 
 const PORT = process.env.PORT || 3333;
 const ROOT_DIR = path.resolve(__dirname, '../../../');
@@ -77,6 +78,9 @@ const telegramAdapter = new TelegramAdapter();
 const integrationRegistry = new IntegrationRegistry();
 const credentialBroker = new CredentialBroker();
 const ontologyEngine = new OperationalOntologyEngine();
+const toolFabricProjection = new ToolFabricProjection();
+const toolFabricSnapshotPath = process.env.AFTERGRAPH_TOOL_FABRIC_SNAPSHOT || path.join(ROOT_DIR, 'data', 'tool-fabric-snapshot.json');
+toolFabricProjection.loadFile(toolFabricSnapshotPath);
 
 // Non-blocking live org sync on boot to hydrate 31 repositories from GitHub
 githubAdapter.syncLiveOrg().then(syncRes => {
@@ -196,6 +200,17 @@ const server = http.createServer(async (req, res) => {
 
     if (reqPath === '/api/integrations') {
       return sendJson(res, 200, { integrations: integrationRegistry.getAll() });
+    }
+
+    if (reqPath === '/api/tool-fabric') {
+      return sendJson(res, 200, { toolFabric: toolFabricProjection.status() });
+    }
+
+    if (reqPath === '/api/tool-fabric/tools') {
+      return sendJson(res, 200, {
+        toolFabric: toolFabricProjection.status(),
+        tools: toolFabricProjection.listTools()
+      });
     }
 
     if (reqPath === '/api/events') {
