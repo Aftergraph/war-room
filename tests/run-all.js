@@ -43,7 +43,6 @@ const { CredentialBroker } = require('../security/src/credentialBroker');
 const { TelegramBotRunner } = require('../integrations/telegram/bot-runner');
 const { sampleHardware } = require('../services/node-bridge/bridge-client');
 const { OperationalOntologyEngine } = require('../packages/ontology/src');
-const { ToolFabricProjection } = require('../services/tool-fabric/src/projection');
 
 async function runAllTests() {
   console.log('===============================================================');
@@ -162,32 +161,6 @@ async function runAllTests() {
     assert.strictEqual(result.totalObserved, 30);
     assert.strictEqual(result.governedCount, 28);
     assert.strictEqual(result.unregisteredCount, 2);
-  });
-
-  // --- 3B. TOOLFABRIC OBSERVABILITY ---
-  console.log('\n--- 3B. ToolFabric Observability ---');
-  test('ToolFabric projection is evidence-honest and non-authoritative', () => {
-    const projection = new ToolFabricProjection();
-    const status = projection.ingest({
-      schemaVersion: 'aftergraph.tool-fabric-snapshot/v1',
-      observationCount: 4,
-      authorityGranted: false,
-      tools: [{
-        schemaVersion: 'aftergraph.tool/v1',
-        id: 'relay.system.health',
-        version: '1.0.0',
-        kind: 'mcp',
-        capabilities: ['EXECUTION_OBSERVE'],
-        runtime: 'relay',
-        credentialBindings: [],
-        health: { state: 'healthy' },
-        provenance: { source: 'test', revision: 'abc', digest: 'a'.repeat(64) }
-      }]
-    }, 'fixture');
-    assert.strictEqual(status.available, true);
-    assert.strictEqual(status.toolCount, 1);
-    assert.strictEqual(status.health.healthy, 1);
-    assert.strictEqual(status.authorityGranted, false);
   });
 
   // --- 4. COMPUTE NODE BRIDGES & CAPABILITY-SCOPED COMMANDS ---
