@@ -16,6 +16,7 @@ const state = {
   agents: [],
   telemetry: { lenovo: null, vds: null },
   integrations: [],
+  toolFabric: null,
   attentionQueue: [],
   hashChain: [],
   events: [],
@@ -105,6 +106,8 @@ const el = {
 
   // Trust Passports (Domain 3)
   passportsGrid: document.getElementById('passportsGrid'),
+  toolFabricStatusBadge: document.getElementById('toolFabricStatusBadge'),
+  toolFabricSummary: document.getElementById('toolFabricSummary'),
 
   // Domain 2: Missions
   missionDagCanvas: document.getElementById('missionDagCanvas'),
@@ -412,6 +415,7 @@ async function loadWarRoomData() {
     loadTrustPassports();
     loadRealityDiff();
     loadEGACStatus();
+    loadToolFabric();
 
     state.pollCountdown = state.pollInterval;
   } catch (err) {
@@ -422,8 +426,64 @@ async function loadWarRoomData() {
   }
 }
 
+
+
+async function loadToolFabric() {
+  try {
+    const res = await fetch('/api/tool-fabric');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    state.toolFabric = data.toolFabric || null;
+  } catch (err) {
+    state.toolFabric = {
+      available: false,
+      toolCount: 0,
+      observationCount: 0,
+      errors: [err.message],
+      health: {},
+      runtimes: {}
+    };
+  }
+  renderToolFabric();
+}
+
+function renderToolFabric() {
+  if (!el.toolFabricStatusBadge || !el.toolFabricSummary) return;
+  const tf = state.toolFabric || { available: false, toolCount: 0, observationCount: 0, health: {}, runtimes: {} };
+
+  if (!tf.available) {
+    el.toolFabricStatusBadge.textContent = 'UNAVAILABLE';
+    el.toolFabricStatusBadge.style.color = 'var(--accent-amber)';
+    el.toolFabricSummary.innerHTML = '<span class="flow-pill">No verified registry snapshot loaded</span>';
+    return;
+  }
+
+  const healthy = Number(tf.health?.healthy || 0);
+  const degraded = Number(tf.health?.degraded || 0);
+  const unhealthy = Number(tf.health?.unhealthy || 0);
+  const runtimeText = Object.entries(tf.runtimes || {})
+    .map(([name, count]) => `${name}: ${count}`)
+    .join(' • ') || 'no runtime targets';
+
+  el.toolFabricStatusBadge.textContent = unhealthy > 0 ? 'ATTENTION' : degraded > 0 ? 'DEGRADED' : 'OBSERVED';
+  el.toolFabricStatusBadge.style.color = unhealthy > 0
+    ? 'var(--accent-danger)'
+    : degraded > 0
+      ? 'var(--accent-amber)'
+      : 'var(--accent-emerald)';
+
+  el.toolFabricSummary.innerHTML = `
+    <span class="flow-pill">${tf.toolCount} tools</span>
+    <span class="flow-pill">${healthy} healthy</span>
+    <span class="flow-pill">${degraded} degraded</span>
+    <span class="flow-pill">${tf.observationCount} observations</span>
+    <span class="metric-meta">${runtimeText}</span>
+  `;
+}
+
 function updateMetricsHeader(summary, quota) {
-  if (el.stat30RepoCount) el.stat30RepoCount.textContent = summary.repoCount || 30;
+  const repoCount = Number.isFinite(summary.repoCount) ? summary.repoCount : (summary.repos || []).length;
+  if (el.stat30RepoCount) el.stat30RepoCount.textContent = repoCount || '--';
   if (el.statActiveJobsCount) el.statActiveJobsCount.textContent = (summary.missions || []).length || 14;
   if (el.statAttentionCount) el.statAttentionCount.textContent = (summary.attentionQueue || []).length || 3;
   if (el.globalAttentionBadge) el.globalAttentionBadge.textContent = (summary.attentionQueue || []).length || 3;
