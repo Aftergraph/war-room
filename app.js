@@ -16,7 +16,6 @@ const state = {
   agents: [],
   telemetry: { lenovo: null, vds: null },
   integrations: [],
-  toolFabric: null,
   attentionQueue: [],
   hashChain: [],
   events: [],
@@ -106,8 +105,6 @@ const el = {
 
   // Trust Passports (Domain 3)
   passportsGrid: document.getElementById('passportsGrid'),
-  toolFabricStatusBadge: document.getElementById('toolFabricStatusBadge'),
-  toolFabricSummary: document.getElementById('toolFabricSummary'),
 
   // Domain 2: Missions
   missionDagCanvas: document.getElementById('missionDagCanvas'),
@@ -415,7 +412,6 @@ async function loadWarRoomData() {
     loadTrustPassports();
     loadRealityDiff();
     loadEGACStatus();
-    loadToolFabric();
 
     state.pollCountdown = state.pollInterval;
   } catch (err) {
@@ -427,73 +423,6 @@ async function loadWarRoomData() {
 }
 
 
-
-async function loadToolFabric() {
-  try {
-    const res = await fetch('/api/tool-fabric');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    state.toolFabric = data.toolFabric || null;
-  } catch (err) {
-    state.toolFabric = {
-      available: false,
-      toolCount: 0,
-      observationCount: 0,
-      errors: [err.message],
-      health: {},
-      runtimes: {}
-    };
-  }
-  renderToolFabric();
-}
-
-function renderToolFabric() {
-  if (!el.toolFabricStatusBadge || !el.toolFabricSummary) return;
-  const tf = state.toolFabric || { available: false, toolCount: 0, observationCount: 0, health: {}, runtimes: {} };
-
-  if (!tf.available) {
-    el.toolFabricStatusBadge.textContent = 'UNAVAILABLE';
-    el.toolFabricStatusBadge.style.color = 'var(--accent-amber)';
-    el.toolFabricSummary.innerHTML = '<span class="flow-pill">No verified registry snapshot loaded</span>';
-    return;
-  }
-
-  const healthy = Number(tf.health?.healthy || 0);
-  const degraded = Number(tf.health?.degraded || 0);
-  const unhealthy = Number(tf.health?.unhealthy || 0);
-  const runtimeText = Object.entries(tf.runtimes || {})
-    .map(([name, count]) => `${name}: ${count}`)
-    .join(' • ') || 'no runtime targets';
-  const federation = tf.federation || null;
-  const staleSources = federation?.sources?.filter(source => source.state === 'stale') || [];
-  const missingRequired = federation?.sources?.filter(source => source.required && source.state === 'missing') || [];
-  const sourceText = federation?.sources?.length
-    ? federation.sources.map(source => `${source.source.replace('Aftergraph/', '')}: ${source.state}`).join(' • ')
-    : 'federation metadata unavailable';
-  const federationAttention = staleSources.length > 0 || missingRequired.length > 0 || federation?.healthy === false;
-
-  el.toolFabricStatusBadge.textContent = unhealthy > 0 || federationAttention
-    ? 'ATTENTION'
-    : degraded > 0
-      ? 'DEGRADED'
-      : 'OBSERVED';
-  el.toolFabricStatusBadge.style.color = unhealthy > 0 || federationAttention
-    ? 'var(--accent-danger)'
-    : degraded > 0
-      ? 'var(--accent-amber)'
-      : 'var(--accent-emerald)';
-
-  el.toolFabricSummary.innerHTML = `
-    <span class="flow-pill">${tf.toolCount} tools</span>
-    <span class="flow-pill">${healthy} healthy</span>
-    <span class="flow-pill">${degraded} degraded</span>
-    <span class="flow-pill">${tf.observationCount} observations</span>
-    ${staleSources.length ? `<span class="flow-pill">${staleSources.length} stale source${staleSources.length === 1 ? '' : 's'}</span>` : ''}
-    ${missingRequired.length ? `<span class="flow-pill">${missingRequired.length} required source${missingRequired.length === 1 ? '' : 's'} missing</span>` : ''}
-    <span class="metric-meta">${runtimeText}</span>
-    <span class="metric-meta">${sourceText}</span>
-  `;
-}
 
 function updateMetricsHeader(summary, quota) {
   const repoCount = Number.isFinite(summary.repoCount) ? summary.repoCount : (summary.repos || []).length;
