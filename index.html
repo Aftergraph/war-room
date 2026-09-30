@@ -126,7 +126,7 @@
             <span class="fabric-dot dot-code"></span>
             <h4>CODE / PRODUCT</h4>
           </div>
-          <p>30 Repos &bull; PRs/Issues &bull; Deployments &bull; Sentinel Radar</p>
+          <p>Live Repos &bull; PRs/Issues &bull; Deployments &bull; Sentinel Radar</p>
         </div>
 
         <div class="fabric-col">
@@ -168,8 +168,8 @@
           </svg>
         </div>
         <div class="metric-content">
-          <div class="metric-value" id="stat30RepoCount">30</div>
-          <div class="metric-label">Governed Repositories</div>
+          <div class="metric-value" id="stat30RepoCount">--</div>
+          <div class="metric-label">Observed Repositories</div>
         </div>
         <div class="metric-meta">Topology v2.0 &bull; 7 Planes</div>
       </div>
@@ -253,16 +253,16 @@
       <div class="domain-viewport active" id="domain-reality">
         <div class="viewport-header">
           <div>
-            <h2>System Reality & 30-Polyrepo Topology</h2>
+            <h2>System Reality & Polyrepo Topology</h2>
             <p class="form-hint">Ground truth across code, production deployments, and verifiable architecture planes.</p>
           </div>
           <div class="viewport-actions">
             <div class="view-mode-toggle" role="group" aria-label="Topology View Mode">
               <button class="btn btn-sm btn-view-toggle active" id="btnViewGraph" aria-label="Switch to Interactive Topology Mesh View">🌐 Interactive Topology Mesh</button>
-              <button class="btn btn-sm btn-view-toggle" id="btnViewGrid" aria-label="Switch to 30-Repo Grid View">▦ 30-Repo Grid</button>
+              <button class="btn btn-sm btn-view-toggle" id="btnViewGrid" aria-label="Switch to Repo Grid View">▦ Repo Grid</button>
               <button class="btn btn-sm btn-view-toggle" id="btnViewRealityDiff" aria-label="Switch to Reality Diff View">⚖ Operational Twin Diff</button>
             </div>
-            <input type="text" class="text-input" id="repoFilterInput" placeholder="Filter 30 repos..." aria-label="Filter Governed Repositories">
+            <input type="text" class="text-input" id="repoFilterInput" placeholder="Filter repositories..." aria-label="Filter Governed Repositories">
             <span class="badge badge-pulse" id="repoSyncStatusBadge">31 Live Governed Repos</span>
           </div>
         </div>
@@ -305,7 +305,7 @@
           </div>
         </div>
 
-        <!-- Dynamic 30-Repo Grid -->
+        <!-- Dynamic Repo Grid -->
         <div class="topology-grid" id="fullRepoGrid" style="display:none;">
           <!-- Populated by app.js -->
         </div>
@@ -591,6 +591,17 @@
           <div>
             <h2>Trust Gateway, Authority & Bayesian Risk Calibration</h2>
             <p class="form-hint">Fail-closed runtime enforcement, credential brokering, Active Learning triage, and cross-repo blast radius.</p>
+          </div>
+        </div>
+
+        <div class="intel-card intel-card-wide" id="toolFabricCard" style="margin-bottom:1rem;">
+          <div class="card-header-with-badge">
+            <h3>ToolFabric Runtime</h3>
+            <span class="badge" id="toolFabricStatusBadge">UNAVAILABLE</span>
+          </div>
+          <p class="form-hint">Observed tool registry, runtime distribution, health and telemetry. War Room observes this plane; it does not grant tool authority.</p>
+          <div class="fabric-core-flow" id="toolFabricSummary">
+            <span class="flow-pill">No verified registry snapshot loaded</span>
           </div>
         </div>
 
