@@ -1,0 +1,277 @@
+name: Superpowers truth benchmark
+
+on:
+  push:
+    branches:
+      - experiment/superpowers-10-task-truth-benchmark
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  structural-and-native-verification:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+      - name: JavaScript syntax
+        run: node --check desktop/web/app.js
+      - name: Canonical + semantic equivalence
+        env:
+          TRUTH_BASE_SHA: 5c0baed576dda766560d2b471cd303c2b02d847a
+        run: node desktop/scripts/verify-simplification-equivalence.mjs
+      - name: Desktop Go tests
+        working-directory: desktop
+        run: go test ./...
+
+  runtime-smoke-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+      - name: Build native runtime
+        working-directory: desktop
+        run: go build -trimpath -o dist/warroom-smoke .
+      - name: Start and probe native runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          export WAR_ROOM_NO_BROWSER=1
+          export AFTERGRAPH_NO_BROWSER=1
+          export HOME="$RUNNER_TEMP/warroom-home"
+          mkdir -p "$HOME"
+          ./desktop/dist/warroom-smoke >"$RUNNER_TEMP/warroom-linux.log" 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          port=""
+          for i in $(seq 1 60); do
+            for p in $(seq 37621 37631); do
+              if curl -fsS "http://127.0.0.1:$p/api/health" >"$RUNNER_TEMP/health.json" 2>/dev/null; then
+                port="$p"
+                break 2
+              fi
+            done
+            sleep 0.5
+          done
+          test -n "$port" || { cat "$RUNNER_TEMP/warroom-linux.log"; exit 1; }
+          node -e 'const x=require(process.argv[1]); if(x.ok!==true) process.exit(1)' "$RUNNER_TEMP/health.json"
+          curl -fsS "http://127.0.0.1:$port/" >"$RUNNER_TEMP/index.html"
+          curl -fsS "http://127.0.0.1:$port/app.js" >"$RUNNER_TEMP/served-app.js"
+          grep -F "Search or ask War Room" "$RUNNER_TEMP/index.html" >/dev/null
+          grep -F "function latestObservedWorkflows" "$RUNNER_TEMP/served-app.js" >/dev/null
+          headers="$(curl -fsSI "http://127.0.0.1:$port/")"
+          grep -qi '^X-Frame-Options: DENY' <<<"$headers"
+          grep -qi '^X-Content-Type-Options: nosniff' <<<"$headers"
+          session="$(curl -fsS "http://127.0.0.1:$port/api/session" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).session))')"
+          test -n "$session"
+          curl -fsS -X POST -H "X-WarRoom-Session: $session" "http://127.0.0.1:$port/api/shutdown" >/dev/null
+          for i in $(seq 1 20); do
+            if ! kill -0 "$pid" 2>/dev/null; then exit 0; fi
+            sleep 0.25
+          done
+          echo "runtime did not stop gracefully" >&2
+          exit 1
+
+  runtime-smoke-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+      - name: Build and probe native Windows runtime
+        shell: pwsh
+        working-directory: desktop
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          go build -trimpath -o dist/warroom-smoke.exe .
+          $env:WAR_ROOM_NO_BROWSER = '1'
+          $env:AFTERGRAPH_NO_BROWSER = '1'
+          $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP 'warroom-localappdata'
+          New-Item -ItemType Directory -Force -Path $env:LOCALAPPDATA | Out-Null
+          $proc = Start-Process -FilePath (Resolve-Path 'dist/warroom-smoke.exe') -PassThru
+          try {
+            $port = $null
+            for ($i = 0; $i -lt 60 -and -not $port; $i++) {
+              foreach ($p in 37621..37631) {
+                try {
+                  $health = Invoke-RestMethod -Uri "http://127.0.0.1:$p/api/health" -TimeoutSec 1
+                  if ($health.ok -eq $true) { $port = $p; break }
+                } catch {}
+              }
+              if (-not $port) { Start-Sleep -Milliseconds 500 }
+            }
+            if (-not $port) { throw 'native Windows runtime did not become healthy' }
+            $root = Invoke-WebRequest -Uri "http://127.0.0.1:$port/" -UseBasicParsing
+            if ($root.StatusCode -ne 200 -or $root.Content -notmatch 'Search or ask War Room') { throw 'root shell smoke failed' }
+            $app = Invoke-WebRequest -Uri "http://127.0.0.1:$port/app.js" -UseBasicParsing
+            if ($app.StatusCode -ne 200 -or $app.Content -notmatch 'function latestObservedWorkflows') { throw 'served app.js smoke failed' }
+            if ($root.Headers['X-Frame-Options'] -ne 'DENY') { throw 'X-Frame-Options missing' }
+            if ($root.Headers['X-Content-Type-Options'] -ne 'nosniff') { throw 'X-Content-Type-Options missing' }
+            $session = Invoke-RestMethod -Uri "http://127.0.0.1:$port/api/session"
+            if ([string]::IsNullOrWhiteSpace($session.session)) { throw 'session missing' }
+            Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:$port/api/shutdown" -Headers @{'X-WarRoom-Session'=$session.session} | Out-Null
+            if (-not $proc.WaitForExit(5000)) { throw 'runtime did not stop gracefully' }
+          } finally {
+            if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force }
+          }
+
+  browser-execution-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build runtime
+        working-directory: desktop
+        run: go build -trimpath -o dist/warroom-browser-smoke .
+      - name: Execute frontend via Chrome DevTools Protocol
+        shell: bash
+        run: |
+          set -euo pipefail
+          export WAR_ROOM_NO_BROWSER=1
+          export AFTERGRAPH_NO_BROWSER=1
+          export HOME="$RUNNER_TEMP/warroom-browser-home"
+          mkdir -p "$HOME"
+          ./desktop/dist/warroom-browser-smoke >"$RUNNER_TEMP/warroom-browser.log" 2>&1 &
+          app_pid=$!
+          chrome_pid=''
+          cleanup() {
+            test -z "$chrome_pid" || kill "$chrome_pid" 2>/dev/null || true
+            kill "$app_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+          port=""
+          for i in $(seq 1 60); do
+            for p in $(seq 37621 37631); do
+              if curl -fsS "http://127.0.0.1:$p/api/health" >/dev/null 2>&1; then
+                port="$p"
+                break 2
+              fi
+            done
+            sleep 0.5
+          done
+          test -n "$port" || { cat "$RUNNER_TEMP/warroom-browser.log"; exit 1; }
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$chrome" || { echo 'No Chromium browser available'; exit 1; }
+          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --remote-debugging-port=9222 --user-data-dir="$RUNNER_TEMP/chrome-truth-profile" about:blank >"$RUNNER_TEMP/chrome-cdp.log" 2>&1 &
+          chrome_pid=$!
+          WAR_ROOM_URL="http://127.0.0.1:$port/" node desktop/scripts/browser-truth-smoke.mjs
+          session="$(curl -fsS "http://127.0.0.1:$port/api/session" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).session))')"
+          curl -fsS -X POST -H "X-WarRoom-Session: $session" "http://127.0.0.1:$port/api/shutdown" >/dev/null
+
+  performance-equivalence-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build exact baseline and exact head
+        shell: bash
+        env:
+          TRUTH_BASE_SHA: 5c0baed576dda766560d2b471cd303c2b02d847a
+        run: |
+          set -euo pipefail
+          git worktree add --detach "$RUNNER_TEMP/truth-base" "$TRUTH_BASE_SHA"
+          git worktree add --detach "$RUNNER_TEMP/truth-head" HEAD
+          mkdir -p "$RUNNER_TEMP/truth-base/desktop/dist" "$RUNNER_TEMP/truth-head/desktop/dist"
+          (cd "$RUNNER_TEMP/truth-base/desktop" && go build -trimpath -o dist/warroom-base .)
+          (cd "$RUNNER_TEMP/truth-head/desktop" && go build -trimpath -o dist/warroom-head .)
+      - name: Paired runtime/resource comparison
+        shell: bash
+        run: |
+          set -euo pipefail
+          python desktop/scripts/runtime-perf-compare.py \
+            --base "$RUNNER_TEMP/truth-base/desktop/dist/warroom-base" \
+            --head "$RUNNER_TEMP/truth-head/desktop/dist/warroom-head" \
+            --iterations 12 \
+            --out "$RUNNER_TEMP/runtime-perf.json"
+          cat "$RUNNER_TEMP/runtime-perf.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: simplification-runtime-performance
+          path: ${{ runner.temp }}/runtime-perf.json
+
+  browser-performance-equivalence-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build exact baseline and exact head
+        shell: bash
+        env:
+          TRUTH_BASE_SHA: 5c0baed576dda766560d2b471cd303c2b02d847a
+        run: |
+          set -euo pipefail
+          git worktree add --detach "$RUNNER_TEMP/browser-base" "$TRUTH_BASE_SHA"
+          git worktree add --detach "$RUNNER_TEMP/browser-head" HEAD
+          mkdir -p "$RUNNER_TEMP/browser-base/desktop/dist" "$RUNNER_TEMP/browser-head/desktop/dist"
+          (cd "$RUNNER_TEMP/browser-base/desktop" && go build -trimpath -o dist/warroom-base .)
+          (cd "$RUNNER_TEMP/browser-head/desktop" && go build -trimpath -o dist/warroom-head .)
+      - name: Start both runtimes and compare browser metrics
+        shell: bash
+        run: |
+          set -euo pipefail
+          export WAR_ROOM_NO_BROWSER=1
+          export AFTERGRAPH_NO_BROWSER=1
+          mkdir -p "$RUNNER_TEMP/browser-base-home" "$RUNNER_TEMP/browser-head-home"
+          HOME="$RUNNER_TEMP/browser-base-home" "$RUNNER_TEMP/browser-base/desktop/dist/warroom-base" >"$RUNNER_TEMP/browser-base.log" 2>&1 &
+          base_pid=$!
+          base_port=''
+          for i in $(seq 1 80); do
+            for p in $(seq 37621 37631); do
+              if curl -fsS "http://127.0.0.1:$p/api/health" >/dev/null 2>&1; then base_port="$p"; break 2; fi
+            done
+            sleep 0.1
+          done
+          test -n "$base_port" || { cat "$RUNNER_TEMP/browser-base.log"; exit 1; }
+          HOME="$RUNNER_TEMP/browser-head-home" "$RUNNER_TEMP/browser-head/desktop/dist/warroom-head" >"$RUNNER_TEMP/browser-head.log" 2>&1 &
+          head_pid=$!
+          head_port=''
+          for i in $(seq 1 80); do
+            for p in $(seq 37621 37631); do
+              if [ "$p" != "$base_port" ] && curl -fsS "http://127.0.0.1:$p/api/health" >/dev/null 2>&1; then head_port="$p"; break 2; fi
+            done
+            sleep 0.1
+          done
+          test -n "$head_port" || { cat "$RUNNER_TEMP/browser-head.log"; kill "$base_pid" || true; exit 1; }
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$chrome" || { echo 'No Chromium browser available'; exit 1; }
+          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --remote-debugging-port=9223 --user-data-dir="$RUNNER_TEMP/chrome-perf-profile" about:blank >"$RUNNER_TEMP/chrome-perf.log" 2>&1 &
+          chrome_pid=$!
+          cleanup() {
+            kill "$chrome_pid" 2>/dev/null || true
+            kill "$head_pid" 2>/dev/null || true
+            kill "$base_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+          BASE_URL="http://127.0.0.1:$base_port/" HEAD_URL="http://127.0.0.1:$head_port/" node desktop/scripts/browser-perf-compare.mjs | tee "$RUNNER_TEMP/browser-perf.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: simplification-browser-performance
+          path: ${{ runner.temp }}/browser-perf.json
