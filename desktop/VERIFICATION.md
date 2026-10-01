@@ -2,6 +2,32 @@
 
 This document distinguishes completed evidence from pending release gates. A missing tool/result is never treated as PASS.
 
+## v1.6.14 native soak evidence analyzer
+
+The repository now contains `scripts/analyze-soak.py` for deterministic analysis of the >=2h native resource soak required by `WR-QA-001`.
+
+The analyzer verifies:
+
+- receipt schema and exact expected source commit / executable SHA-256
+- receipt duration >=2h **and** independently observed NDJSON sample span >=2h
+- first sample near the start of collection
+- receipt/sample-count consistency
+- zero receipt collection errors and zero NDJSON error rows
+- recomputed GitHub, WORKS and Agent Bridge liveness
+- zero stale-agent samples
+- sample-gap continuity
+- first/last quartile medians, min/max, linear slope/hour and consecutive-growth fraction for working set, private bytes, Go heap, handles and threads
+- GitHub reconnect transitions, connecting samples, maximum observed recovery time and provider error classes
+
+The trend rules are deliberately diagnostic only. The output field `closureVerdict` is pinned to `NOT_EMITTED`: analyzer success means the evidence is structurally complete, **not** that `WR-QA-001` is closed. Exact-state human/independent review of the resulting trends remains mandatory.
+
+Regression coverage falsifies:
+
+- forged provenance
+- receipt-only two-hour claims with a shorter observed sample span
+- non-live connector evidence
+- accidental auto-closure semantics
+
 ## v1.6.14 target-Windows accessibility evidence
 
 Target: Lenovo Windows x64, 3200×2000 @ 120 Hz.
