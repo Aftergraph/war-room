@@ -2,3 +2,4 @@
 desktop/BUILD-MANIFEST.json text eol=lf
 desktop/SHA256SUMS.txt text eol=lf
 desktop/scripts/*.py text eol=lf
+.github/workflows/*.lock.yml linguist-generated=true
